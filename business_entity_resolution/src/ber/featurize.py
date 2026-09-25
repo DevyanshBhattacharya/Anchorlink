@@ -30,7 +30,36 @@ from .retrieval import BlockingConfig, RETRIEVAL_COLUMNS, cand_dir
 RRF_COL = RETRIEVAL_COLUMNS.index("rrf")
 PRE_COL = RETRIEVAL_COLUMNS.index("pre")
 
+#: Feature rows held in the parent before a shard is written.
+#:
+#: This was 4,000,000, which at 62 float32 columns is ~1 GB of matrix plus its
+#: key frame, on top of the whole partition's candidate table and three
+#: partitions of pool text.  On a 16 GiB machine that was the difference between
+#: running and not: with eight workers the parent's resident set was evicted
+#: almost entirely, 8.8 GB ended up in the memory compressor, free memory hit
+#: 0.05 GB and forty-five minutes of featurising produced no output at all.
+#: Smaller shards cost a little more file overhead and nothing else — nothing
+#: downstream cares how the rows are divided, only that they stay in S1 order.
+FLUSH_ROWS = 1_500_000
+
 _WORKER: Dict[str, object] = {}
+
+
+def default_workers() -> int:
+    """How many feature workers to run.
+
+    Measured: the workers are **starved**, not saturated.  The parent does all
+    the block preparation — slicing the candidate table, gathering each block's
+    record text, packing the retrieval matrix — single-threaded under the GIL,
+    and eight workers sat at 13-22% utilisation each waiting on it.  Past about
+    four they add no throughput and several gigabytes of resident memory, which
+    on a 16 GiB machine is what pushed the parent into the compressor.
+
+    So this is deliberately not ``cpu_count() - 2``: the ceiling here is the
+    parent, and the cost of guessing high is thrashing rather than slowness.
+    """
+    cpus = os.cpu_count() or 4
+    return max(1, min(4, cpus - 2))
 
 
 # ------------------------------------------------------------------ block job
@@ -235,13 +264,19 @@ def featurize_partition(split: str, country: str, bcfg: BlockingConfig,
             stale.unlink()
         done.unlink()
 
-    n_workers = n_workers if n_workers is not None else max(1, (os.cpu_count() or 4) - 2)
+    n_workers = n_workers if n_workers is not None else default_workers()
     t0 = time.time()
     keys: List[pd.DataFrame] = []
     mats: List[np.ndarray] = []
     n_rows = 0
 
     def flush(part: int) -> None:
+        """Write one shard and let go of it.
+
+        Logs as it goes.  The stage used to print once, at the end, so a run that
+        had stopped making progress looked exactly like a run that was busy —
+        the same failure the blocking stage already learned from (PROGRESS.md §7).
+        """
         nonlocal keys, mats
         if not mats:
             return
@@ -250,6 +285,13 @@ def featurize_partition(split: str, country: str, bcfg: BlockingConfig,
         np.save(out / f"X-{part:04d}.npy", X)
         K.to_parquet(out / f"K-{part:04d}.parquet", index=False, compression="zstd")
         keys, mats = [], []
+        if verbose:
+            el = time.time() - t0
+            print(f"  [featurize] {split}/{country}: wrote shard {part}, "
+                  f"{n_rows:,} pairs done in {el:.0f}s "
+                  f"({n_rows / max(el, 1e-9):,.0f} pairs/s)", flush=True)
+        del X, K
+        gc.collect()
 
     part = 0
     if n_workers > 1:
@@ -265,11 +307,11 @@ def featurize_partition(split: str, country: str, bcfg: BlockingConfig,
                 while len(pending) >= n_workers * 2:
                     res, k = pending.pop(0)
                     mats.append(res.get()); keys.append(k); n_rows += len(k)
-                    if n_rows and sum(m.shape[0] for m in mats) >= 4_000_000:
+                    if n_rows and sum(m.shape[0] for m in mats) >= FLUSH_ROWS:
                         flush(part); part += 1
             for res, k in pending:
                 mats.append(res.get()); keys.append(k); n_rows += len(k)
-                if sum(m.shape[0] for m in mats) >= 4_000_000:
+                if sum(m.shape[0] for m in mats) >= FLUSH_ROWS:
                     flush(part); part += 1
         finally:
             pool.close(); pool.join()
@@ -281,7 +323,7 @@ def featurize_partition(split: str, country: str, bcfg: BlockingConfig,
             mats.append(compute_block(block, roles))
             keys.append(rows[["s1", "src", "cid"]].reset_index(drop=True))
             n_rows += len(rows)
-            if sum(m.shape[0] for m in mats) >= 4_000_000:
+            if sum(m.shape[0] for m in mats) >= FLUSH_ROWS:
                 flush(part); part += 1
     flush(part)
     done.write_text(stamp + "\n")
