@@ -30,16 +30,6 @@ from .retrieval import BlockingConfig, RETRIEVAL_COLUMNS, cand_dir
 RRF_COL = RETRIEVAL_COLUMNS.index("rrf")
 PRE_COL = RETRIEVAL_COLUMNS.index("pre")
 
-#: Feature rows held in the parent before a shard is written.
-#:
-#: Left at v2's value after measuring that lowering it *hurt*: flushing 2.7x more
-#: often means 2.7x more of the parent's serial work (a 370 MB vstack, a parquet
-#: write, and the garbage collection behind them) interleaved with the block
-#: preparation the workers are waiting on, and worker duty cycle fell from 61% to
-#: 10%.  The stage's limit is the parent, so anything that adds parent work
-#: between blocks is a regression however much memory it saves.
-FLUSH_ROWS = 4_000_000
-
 _WORKER: Dict[str, object] = {}
 
 
@@ -73,6 +63,11 @@ class Block:
     src: np.ndarray          # [n] int8, 2 or 3
     retr: np.ndarray         # [n, 7] float32 retrieval columns
     bounds: np.ndarray       # group offsets over the rows (sorted by S1)
+    #: the (s1, src, cid) keys of these rows, carried so the worker can write the
+    #: whole shard itself rather than send a feature matrix back (see
+    #: :func:`_run_block_write`)
+    s1: np.ndarray = None    # type: ignore[assignment]
+    cid: np.ndarray = None   # type: ignore[assignment]
 
 
 def compute_block(block: Block, roles: TokenRoles) -> np.ndarray:
@@ -142,6 +137,39 @@ def _init_worker(roles_path: str, country: str) -> None:
 
 def _run_block(block: Block) -> np.ndarray:
     return compute_block(block, _WORKER["roles"])
+
+
+def _run_block_write(block: Block, out_dir: str, idx: int) -> Tuple[int, int]:
+    """Compute one block **and write its shard**, returning only (index, rows).
+
+    Sending the matrix back instead was the stage's real bottleneck.  A block of
+    ~190k pairs by 62 float32 columns is a 47 MB result, every one of them travels
+    through the single pipe a multiprocessing pool shares between all workers, and
+    the parent has one thread to unpickle them.  Measured on a live run: the
+    workers had computed 16M of the partition's 17.6M pairs while the parent had
+    written **nothing** — the compute was done and the results could not drain.
+
+    A worker writing its own shard sends back sixteen bytes instead, and the
+    per-partition IPC drops from 4.4 GB to nothing.  Blocks are yielded in S1
+    order and the index is the block's position, so sorting shards by filename
+    still recovers that order, which is what the meta and decision layers assume.
+    """
+    X = compute_block(block, _WORKER["roles"])
+    _write_shard(Path(out_dir), idx, X, block.s1, block.src, block.cid)
+    return idx, X.shape[0]
+
+
+def _write_shard(out: Path, idx: int, X: np.ndarray, s1: np.ndarray,
+                 src: np.ndarray, cid: np.ndarray) -> None:
+    """One (features, keys) shard pair, written atomically enough to resume.
+
+    The matrix lands first and the key frame second, and a partition is only
+    marked done once every shard is on disk, so a shard whose matrix exists
+    without its keys is caught by the count check in :func:`load_features`.
+    """
+    np.save(out / f"X-{idx:04d}.npy", X)
+    pd.DataFrame({"s1": s1, "src": src, "cid": cid}).to_parquet(
+        out / f"K-{idx:04d}.parquet", index=False, compression="zstd")
 
 
 # ------------------------------------------------------------------ driver
@@ -284,6 +312,8 @@ def iter_blocks(split: str, country: str, bcfg: BlockingConfig,
             src=src,
             retr=_retr_slice(cols, retr_cols, lo, hi),
             bounds=(starts[g0:g1 + 1] - lo).astype(np.int64),
+            s1=cols["s1"][lo:hi],
+            cid=cid,
         )
         yield block, rows
 
@@ -292,6 +322,17 @@ def featurize_partition(split: str, country: str, bcfg: BlockingConfig,
                         roles_path: Path, block_s1: int = 4000,
                         n_workers: int | None = None, verbose: bool = True,
                         force: bool = False, pruned: bool = True) -> Path:
+    """Compute every pair feature for one partition, one shard per block.
+
+    Each worker writes its own shard and returns only its index and row count.
+    Sending the matrix back instead was this stage's real bottleneck: a block of
+    ~190k pairs by 62 float32 columns is a 47 MB result, all of them travel
+    through the one pipe a multiprocessing pool shares, and the parent has a
+    single thread to unpickle them.  Measured on a live run, the workers had
+    computed 16M of a partition's 17.6M pairs while the parent had written
+    nothing — the compute was finished and the results could not drain.  Writing
+    from the worker takes 4.4 GB of per-partition IPC down to a few hundred bytes.
+    """
     out = feature_dir(split, country, bcfg)
     out.mkdir(parents=True, exist_ok=True)
     src_done = cand_dir(split, country, bcfg, pruned=pruned) / "_DONE"
@@ -303,73 +344,72 @@ def featurize_partition(split: str, country: str, bcfg: BlockingConfig,
         for stale in list(out.glob("X-*.npy")) + list(out.glob("K-*.parquet")):
             stale.unlink()
         done.unlink()
+    # a previous interrupted attempt leaves shards behind; they are not trusted,
+    # because the block count depends on block_s1 and the candidate table
+    for stale in list(out.glob("X-*.npy")) + list(out.glob("K-*.parquet")):
+        stale.unlink()
 
     n_workers = n_workers if n_workers is not None else default_workers()
     t0 = time.time()
-    keys: List[pd.DataFrame] = []
-    mats: List[np.ndarray] = []
     n_rows = 0
+    n_shards = 0
 
-    def flush(part: int) -> None:
-        """Write one shard and let go of it.
+    def progress(idx: int, rows: int) -> None:
+        """Count one finished shard, and say so often enough to be legible.
 
-        Logs as it goes.  The stage used to print once, at the end, so a run that
+        The stage used to print once, at the end of a partition, so a run that
         had stopped making progress looked exactly like a run that was busy —
         the same failure the blocking stage already learned from (PROGRESS.md §7).
         """
-        nonlocal keys, mats
-        if not mats:
-            return
-        X = np.vstack(mats)
-        K = pd.concat(keys, ignore_index=True)
-        np.save(out / f"X-{part:04d}.npy", X)
-        K.to_parquet(out / f"K-{part:04d}.parquet", index=False, compression="zstd")
-        keys, mats = [], []
-        if verbose:
+        nonlocal n_rows, n_shards
+        n_rows += rows
+        n_shards += 1
+        if verbose and n_shards % 8 == 0:
             el = time.time() - t0
-            print(f"  [featurize] {split}/{country}: wrote shard {part}, "
-                  f"{n_rows:,} pairs done in {el:.0f}s "
+            print(f"  [featurize] {split}/{country}: {n_shards} shards, "
+                  f"{n_rows:,} pairs in {el:.0f}s "
                   f"({n_rows / max(el, 1e-9):,.0f} pairs/s)", flush=True)
-        del X, K
 
-    part = 0
     if n_workers > 1:
         import multiprocessing as mp
         ctx = mp.get_context("spawn")
         pool = ctx.Pool(n_workers, initializer=_init_worker,
                         initargs=(str(roles_path), country))
         try:
-            pending = []
-            for block, rows in iter_blocks(split, country, bcfg, block_s1, pruned):
-                pending.append((pool.apply_async(_run_block, (block,)),
-                                rows[["s1", "src", "cid"]].reset_index(drop=True)))
-                while len(pending) >= n_workers * 2:
-                    res, k = pending.pop(0)
-                    mats.append(res.get()); keys.append(k); n_rows += len(k)
-                    if n_rows and sum(m.shape[0] for m in mats) >= FLUSH_ROWS:
-                        flush(part); part += 1
-            for res, k in pending:
-                mats.append(res.get()); keys.append(k); n_rows += len(k)
-                if sum(m.shape[0] for m in mats) >= FLUSH_ROWS:
-                    flush(part); part += 1
+            # The queue is bounded at a few blocks per worker: deeper buys no
+            # throughput, and every queued block holds its record text in the
+            # parent until it has been sent.
+            pending: List = []
+            limit = max(2, n_workers * 2)
+            for idx, (block, _rows) in enumerate(
+                    iter_blocks(split, country, bcfg, block_s1, pruned)):
+                pending.append(pool.apply_async(_run_block_write,
+                                                (block, str(out), idx)))
+                del block, _rows
+                while len(pending) >= limit:
+                    progress(*pending.pop(0).get())
+            for res in pending:
+                progress(*res.get())
         finally:
             pool.close(); pool.join()
     else:
         import pickle
         with open(roles_path, "rb") as fh:
             roles = pickle.load(fh)
-        for block, rows in iter_blocks(split, country, bcfg, block_s1, pruned):
-            mats.append(compute_block(block, roles))
-            keys.append(rows[["s1", "src", "cid"]].reset_index(drop=True))
-            n_rows += len(rows)
-            if sum(m.shape[0] for m in mats) >= FLUSH_ROWS:
-                flush(part); part += 1
-    flush(part)
+        for idx, (block, _rows) in enumerate(
+                iter_blocks(split, country, bcfg, block_s1, pruned)):
+            X = compute_block(block, roles)
+            _write_shard(out, idx, X, block.s1, block.src, block.cid)
+            progress(idx, X.shape[0])
+            del block, _rows, X
+
     done.write_text(stamp + "\n")
     if verbose:
         print(f"[featurize] {split}/{country}: {n_rows:,} pairs in "
-              f"{time.time() - t0:.0f}s ({n_workers} workers)", flush=True)
+              f"{time.time() - t0:.0f}s ({n_shards} shards, {n_workers} workers)",
+              flush=True)
     return out
+
 
 
 def load_features(split: str, country: str, bcfg: BlockingConfig,
