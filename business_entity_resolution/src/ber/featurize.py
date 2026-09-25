@@ -32,15 +32,13 @@ PRE_COL = RETRIEVAL_COLUMNS.index("pre")
 
 #: Feature rows held in the parent before a shard is written.
 #:
-#: This was 4,000,000, which at 62 float32 columns is ~1 GB of matrix plus its
-#: key frame, on top of the whole partition's candidate table and three
-#: partitions of pool text.  On a 16 GiB machine that was the difference between
-#: running and not: with eight workers the parent's resident set was evicted
-#: almost entirely, 8.8 GB ended up in the memory compressor, free memory hit
-#: 0.05 GB and forty-five minutes of featurising produced no output at all.
-#: Smaller shards cost a little more file overhead and nothing else — nothing
-#: downstream cares how the rows are divided, only that they stay in S1 order.
-FLUSH_ROWS = 1_500_000
+#: Left at v2's value after measuring that lowering it *hurt*: flushing 2.7x more
+#: often means 2.7x more of the parent's serial work (a 370 MB vstack, a parquet
+#: write, and the garbage collection behind them) interleaved with the block
+#: preparation the workers are waiting on, and worker duty cycle fell from 61% to
+#: 10%.  The stage's limit is the parent, so anything that adds parent work
+#: between blocks is a regression however much memory it saves.
+FLUSH_ROWS = 4_000_000
 
 _WORKER: Dict[str, object] = {}
 
@@ -48,18 +46,17 @@ _WORKER: Dict[str, object] = {}
 def default_workers() -> int:
     """How many feature workers to run.
 
-    Measured: the workers are **starved**, not saturated.  The parent does all
-    the block preparation — slicing the candidate table, gathering each block's
-    record text, packing the retrieval matrix — single-threaded under the GIL,
-    and eight workers sat at 13-22% utilisation each waiting on it.  Past about
-    four they add no throughput and several gigabytes of resident memory, which
-    on a 16 GiB machine is what pushed the parent into the compressor.
-
-    So this is deliberately not ``cpu_count() - 2``: the ceiling here is the
-    parent, and the cost of guessing high is thrashing rather than slowness.
+    ``cpu_count() - 2``, which is what the submitted run used and what measured
+    fastest (13,560 pairs/s).  The workers look idle — 13-22% duty cycle each —
+    because the parent prepares every block single-threaded under the GIL and
+    each finished block sends a ~47 MB matrix back through a pool pipe, so they
+    spend most of their time waiting rather than computing.  That is not a reason
+    to run fewer of them: cutting to four was tried and throughput fell to
+    4,850 pairs/s, because a starved worker still costs nothing while an absent
+    one cannot absorb a burst.
     """
     cpus = os.cpu_count() or 4
-    return max(1, min(4, cpus - 2))
+    return max(1, cpus - 2)
 
 
 # ------------------------------------------------------------------ block job
@@ -334,7 +331,6 @@ def featurize_partition(split: str, country: str, bcfg: BlockingConfig,
                   f"{n_rows:,} pairs done in {el:.0f}s "
                   f"({n_rows / max(el, 1e-9):,.0f} pairs/s)", flush=True)
         del X, K
-        gc.collect()
 
     part = 0
     if n_workers > 1:
