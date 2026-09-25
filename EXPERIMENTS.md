@@ -336,7 +336,32 @@ ever reads plain numpy arrays. Reading column by column and sorting with
 `lexsort`, releasing each arrow buffer as it goes, removes those copies outright.
 
 Capping the default worker count at 4 was a mis-step on the strength of the
-duty-cycle reading, and this run overrides it on the command line.
+duty-cycle reading, and it was reverted.
+
+### The change that did work, and the one that invalidated its own measurement
+
+**Workers write their own shards.** A block of ~190k pairs by 62 float32 columns
+is a 47 MB result, every one of them crossed the single pipe a multiprocessing
+pool shares between all its workers, and the parent had one thread to unpickle
+them. On a live run the workers had computed 16M of a partition's 17.6M pairs
+while the parent had written **nothing** — the compute was finished and the
+results could not drain. Workers now write `X-NNNN.npy` and `K-NNNN.parquet`
+themselves and return `(index, rows)`, which takes per-partition IPC from 4.4 GB
+to a few hundred bytes and removes the parent-side `vstack` with it. Shards stay
+in S1 order because blocks are yielded in that order and the index is the
+block's position, which is what the sorted-filename read in `load_features` and
+`infer.score_country` already assumed.
+
+**And the methodological error underneath the whole episode.** Several of the
+diagnostics above — the `compute_block` benchmark, the pickle benchmark, two
+`iter_blocks` loads — each took a core and two to three gigabytes *while the run
+they were measuring was executing*. That is enough to depress a worker duty
+cycle on a ten-core machine, and it is why successive readings of the same
+quantity disagreed (9%, 17%, 37%, 61%, 98%). The numbers that survived are the
+ones taken on an idle machine: 160 µs/pair for `compute_block`, 0.13 s/block for
+the parent, 0.06 s/block to pickle a block. The ones taken alongside the run
+should not have been trusted, and the conclusions drawn from them cost three
+restarts.
 
 ---
 
