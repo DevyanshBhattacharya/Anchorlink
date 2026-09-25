@@ -41,7 +41,8 @@ class RecordView:
                  "addr_w", "addr_W", "core_w", "core_W", "name_grams", "skel",
                  "skel_grams", "addr_grams", "nums", "nums_i", "aliases",
                  "native", "domain", "freq_pct", "has_addr",
-                 "name_w", "name_W", "addr_tail", "pins", "addr_skel_grams")
+                 "name_w", "name_W", "addr_tail", "pins", "addr_skel_grams",
+                 "addr_tok_set")
 
     def __init__(self, name: str, addr: str, country: str, roles: TokenRoles):
         self.name = clean_text(name)
@@ -50,7 +51,11 @@ class RecordView:
         self.core_toks = roles.core_tokens(name, country) or self.name_toks
         self.core = " ".join(self.core_toks)
         self.addr_toks = tokens(addr)
-        self.addr_w = {t: roles.addr_weight(t, country) for t in set(self.addr_toks)}
+        #: the token *set*, kept because three v3 features need it per pair and
+        #: rebuilding it there costs a set construction per candidate rather than
+        #: per record
+        self.addr_tok_set = set(self.addr_toks)
+        self.addr_w = {t: roles.addr_weight(t, country) for t in self.addr_tok_set}
         self.addr_W = float(sum(self.addr_w.values()))
         self.core_w = {t: roles.weight(t, country) for t in set(self.core_toks)}
         self.core_W = float(sum(self.core_w.values()))
@@ -332,7 +337,7 @@ def pair_feature_row(v1: RecordView, v2: RecordView, roles: TokenRoles,
     # -- address
     out[22] = float(not v1.has_addr) + float(not v2.has_addr)
     if v1.has_addr and v2.has_addr:
-        sh = set(v1.addr_w) & set(v2.addr_w)
+        sh = v1.addr_tok_set & v2.addr_tok_set
         iw1 = sum(v1.addr_w[t] for t in sh)
         iw2 = sum(v2.addr_w[t] for t in sh)
         denom = min(v1.addr_W, v2.addr_W)
@@ -378,8 +383,8 @@ def pair_feature_row(v1: RecordView, v2: RecordView, roles: TokenRoles,
     # "<W4>-19-22, ... <W2>" against a candidate named "<W10>" addressed
     # "<W2>, <W4>-19-2, ...", the only shared evidence is the S1 *name* token
     # <W2> appearing in the candidate's *address*.
-    out[35] = _mass_in(v1.name_w, v1.name_W, v2.addr_toks)
-    out[36] = _mass_in(v2.name_w, v2.name_W, v1.addr_toks)
+    out[35] = _mass_in(v1.name_w, v1.name_W, v2.addr_tok_set)
+    out[36] = _mass_in(v2.name_w, v2.name_W, v1.addr_tok_set)
 
     # -- rarity: a match on "Zebulon" is not a match on "Enterprises"
     #
@@ -421,30 +426,30 @@ def pair_feature_row(v1: RecordView, v2: RecordView, roles: TokenRoles,
         # ...and the same tokens against the *whole* other address, because these
         # fields get reordered and then a tail-to-tail test compares a street
         # against a city
-        a2, a1 = set(v2.addr_toks), set(v1.addr_toks)
-        cov = []
+        cov = n_cov = 0.0
         if v1.addr_tail:
-            cov.append(len(v1.addr_tail & a2) / len(v1.addr_tail))
+            cov += len(v1.addr_tail & v2.addr_tok_set) / len(v1.addr_tail)
+            n_cov += 1.0
         if v2.addr_tail:
-            cov.append(len(v2.addr_tail & a1) / len(v2.addr_tail))
-        out[41] = float(np.mean(cov)) if cov else NAN
+            cov += len(v2.addr_tail & v1.addr_tok_set) / len(v2.addr_tail)
+            n_cov += 1.0
+        out[41] = (cov / n_cov) if n_cov else NAN
         out[42] = (float(bool(v1.pins & v2.pins)) if (v1.pins and v2.pins) else NAN)
         out[43] = jaccard(v1.addr_skel_grams, v2.addr_skel_grams)
-        shared_a = set(v1.addr_w) & set(v2.addr_w)
         amax = roles.max_addr_idf(country)
-        ar = [v1.addr_w[t] for t in shared_a if not t.isdigit()]
+        ar = [v1.addr_w[t] for t in v1.addr_tok_set & v2.addr_tok_set
+              if not t.isdigit()]
         out[44] = (max(ar) / amax) if ar and amax > 0 else 0.0
     else:
         out[40] = out[41] = out[42] = out[43] = NAN
         out[44] = NAN
 
 
-def _mass_in(w: Dict[str, float], total: float, other: Sequence[str]) -> float:
+def _mass_in(w: Dict[str, float], total: float, other: Set[str]) -> float:
     """Share of ``w``'s IDF mass whose tokens appear in ``other``."""
     if total <= 0 or not other:
         return NAN
-    o = set(other)
-    return sum(v for t, v in w.items() if t in o) / total
+    return sum(v for t, v in w.items() if t in other) / total
 
 
 def support_similarity(v1: RecordView, v2: RecordView) -> Tuple[float, float]:

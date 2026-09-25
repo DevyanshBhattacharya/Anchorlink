@@ -184,6 +184,51 @@ def _retr_matrix(rows: pd.DataFrame, cols: Sequence[str]) -> np.ndarray:
     return M
 
 
+def _retr_slice(cols: Dict[str, np.ndarray], names: Sequence[str],
+                lo: int, hi: int) -> np.ndarray:
+    M = np.empty((hi - lo, len(names)), dtype=np.float32)
+    for j, c in enumerate(names):
+        arr = cols.get(c)
+        M[:, j] = np.nan if arr is None else arr[lo:hi]
+    return M
+
+
+def _load_candidate_columns(parts: Sequence[Path]) -> Dict[str, np.ndarray]:
+    """The candidate table as plain numpy arrays, sorted by (s1, src, cid).
+
+    Deliberately *not* a pandas DataFrame.  ``pd.concat`` of both sources
+    followed by ``sort_values`` held two or three copies of a table that is
+    already three quarters of a gigabyte at training scale and over two at test
+    scale, and on a 16 GiB machine that was the whole difference between a stage
+    that runs and one that spends its life in the memory compressor: free memory
+    sat at 0.03 GB, feature throughput was 4,850 pairs/s against 13,500 for the
+    same code on a smaller table, and the arrays here are the only thing the rest
+    of this module ever reads.
+
+    Columns are read one at a time and the arrow buffer for each is released
+    before the next, so peak is one column of the concatenated table plus the
+    result, never the whole thing twice.
+    """
+    schemas = [pq.ParquetFile(p).schema_arrow for p in parts]
+    names = [f for f in schemas[0].names]
+    out: Dict[str, np.ndarray] = {}
+    for name in names:
+        chunks = []
+        for p in parts:
+            t = pq.read_table(p, columns=[name])
+            chunks.append(t.column(0).to_numpy(zero_copy_only=False))
+            del t
+        out[name] = np.concatenate(chunks) if len(chunks) > 1 else chunks[0]
+        del chunks
+    gc.collect()
+    order = np.lexsort((out["cid"], out["src"], out["s1"]))
+    for name in list(out):
+        out[name] = out[name][order]
+    del order
+    gc.collect()
+    return out
+
+
 def iter_blocks(split: str, country: str, bcfg: BlockingConfig,
                 block_s1: int = 4000, pruned: bool = True
                 ) -> Iterable[Tuple[Block, pd.DataFrame]]:
@@ -192,16 +237,14 @@ def iter_blocks(split: str, country: str, bcfg: BlockingConfig,
     parts = sorted(d.glob("S*.parquet"))
     if not parts:
         raise FileNotFoundError(f"no candidate shards in {d}")
-    df = pd.concat([pq.read_table(p).to_pandas() for p in parts], ignore_index=True)
-    df.sort_values(["s1", "src", "cid"], inplace=True, kind="stable")
-    df.reset_index(drop=True, inplace=True)
+    cols = _load_candidate_columns(parts)
 
     s1p = load_partition(split, "S1", country)
     pools = {2: load_partition(split, "S2", country), 3: load_partition(split, "S3", country)}
     s1_sorted, s1_order = _lookup(s1p.ids)
     pool_lut = {s: _lookup(p.ids) for s, p in pools.items()}
 
-    s1_arr = df["s1"].to_numpy()
+    s1_arr = cols["s1"]
     starts = np.flatnonzero(np.r_[True, s1_arr[1:] != s1_arr[:-1]])
     starts = np.r_[starts, len(s1_arr)]
     n_groups = len(starts) - 1
@@ -210,11 +253,11 @@ def iter_blocks(split: str, country: str, bcfg: BlockingConfig,
     for g0 in range(0, n_groups, block_s1):
         g1 = min(g0 + block_s1, n_groups)
         lo, hi = int(starts[g0]), int(starts[g1])
-        rows = df.iloc[lo:hi]
+        src = cols["src"][lo:hi]
+        cid = cols["cid"][lo:hi]
+        rows = pd.DataFrame({"s1": cols["s1"][lo:hi], "src": src, "cid": cid})
         uq, q_row_local = np.unique(rows["s1"].to_numpy(), return_inverse=True)
         q_rows = _rows_for(s1_sorted, s1_order, uq)
-        src = rows["src"].to_numpy().astype(np.int8)
-        cid = rows["cid"].to_numpy()
         # candidates are keyed by (src, cid) so the two sources cannot collide
         ckey = src.astype(np.int64) * (1 << 32) + cid.astype(np.int64)
         uck, c_row_local = np.unique(ckey, return_inverse=True)
@@ -242,7 +285,7 @@ def iter_blocks(split: str, country: str, bcfg: BlockingConfig,
             c_name=c_name, c_addr=c_addr,
             q_row=q_row_local.astype(np.int32), c_row=c_row_local.astype(np.int32),
             src=src,
-            retr=_retr_matrix(rows, retr_cols),
+            retr=_retr_slice(cols, retr_cols, lo, hi),
             bounds=(starts[g0:g1 + 1] - lo).astype(np.int64),
         )
         yield block, rows
