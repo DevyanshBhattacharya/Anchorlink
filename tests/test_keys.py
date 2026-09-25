@@ -21,15 +21,15 @@ def test_hash64_fits_int64_and_is_stable():
 
 def test_zero_padding_and_typo_share_a_key():
     roles = _roles()
-    a = record_keys("Apex Digital LLC", "1795 Westchester Dr", "US", roles)
-    b = record_keys("Apex Digital LLC", "001795 Westchester Drive", "US", roles)
+    a = record_keys("Apex Digital LLC", "1795 Brackendale Dr", "US", roles)
+    b = record_keys("Apex Digital LLC", "001795 Brackendale Drive", "US", roles)
     assert set(a) & set(b)              # leading zeros stripped -> same number key
 
 
 def test_lookup_finds_the_right_rows():
     roles = _roles()
     names = ["Apex Digital LLC", "Beta Tools LLC", "Apex Digital LLC"]
-    addrs = ["1795 Westchester Dr", "12 Other St", "001795 Westchester Drive"]
+    addrs = ["1795 Brackendale Dr", "12 Other St", "001795 Brackendale Drive"]
     kb = KeyBlocks.build(names, addrs, "US", roles)
     hits = set(kb.lookup(record_keys(names[0], addrs[0], "US", roles)).tolist())
     assert {0, 2} <= hits
@@ -40,7 +40,7 @@ def test_blocks_are_capped():
     roles = _roles()
     n = 200
     names = ["Apex Digital LLC"] * n
-    addrs = ["1795 Westchester Dr"] * n
+    addrs = ["1795 Brackendale Dr"] * n
     kb = KeyBlocks.build(names, addrs, "US", roles, max_block=50)
     counts = np.diff(kb.starts)
     assert counts.max() <= 50

@@ -573,21 +573,21 @@ The v1 benchmark's error table put **34.9% of India's false positives** in one
 bucket: *"name differs by a legal form or one token"*. Chasing the top example
 back to the raw files turned that from a label into a mechanism.
 
-`S1-499359562` — **"Valiant Entertainment Private Limited"**, Dd Trade Tower,
-Kaloor, Ernakulam. Its three true matches in the ground truth:
+`S1-499359562` — **"«Brand» «Type» Private Limited"**, Dd Trade Tower,
+a Kochi address. Its three true matches in the ground truth:
 
 | id | name | note |
 | --- | --- | --- |
-| `S2-77517601` | Valiant Entertainment-**Private** Ltd | keeps *Private* |
-| `S3-431559381` | Valiant Entertainment **Private** | keeps *Private* |
-| `S3-811034049` | Entertainment Valiant **Private** [Limited] | keeps *Private*, words reordered |
+| `S2-77517601` | «Brand» «Type»-**Private** Ltd | keeps *Private* |
+| `S3-431559381` | «Brand» «Type» **Private** | keeps *Private* |
+| `S3-811034049` | «Type» «Brand» **Private** [Limited] | keeps *Private*, words reordered |
 
 And the record the model matched at p = 1.0, which appears **nowhere** in the
 ground truth — it matches no Source-1 entity at all:
 
 | id | name | address |
 | --- | --- | --- |
-| `S2-83808461` | Valiant Entertainment Limited | byte-identical to the S1 address |
+| `S2-83808461` | «Brand» «Type» Limited | byte-identical to the S1 address |
 
 The distractor is the only one of the four that drops *Private*. The dataset's
 hard negatives are built by altering a legal-form token, so that token is the
@@ -619,10 +619,10 @@ real corpus statistics:
 
 | | `name_tok_only_1` | `name_tok_jac` | `name_tset` | `name_idf_unmatched_1` |
 | --- | --- | --- | --- | --- |
-| true: Valiant Entertainment-Private Ltd | **0** | 0.600 | 1.00 | 0.000 |
-| true: Valiant Entertainment Private | **0** | 0.750 | 1.00 | 0.000 |
-| true: Entertainment Valiant Private [Limited] | **0** | 1.000 | 1.00 | 0.000 |
-| **false: Valiant Entertainment Limited** | **1** | 0.750 | 1.00 | 0.000 |
+| true: «Brand» «Type»-Private Ltd | **0** | 0.600 | 1.00 | 0.000 |
+| true: «Brand» «Type» Private | **0** | 0.750 | 1.00 | 0.000 |
+| true: «Type» «Brand» Private [Limited] | **0** | 1.000 | 1.00 | 0.000 |
+| **false: «Brand» «Type» Limited** | **1** | 0.750 | 1.00 | 0.000 |
 
 Clean separation on the one column, and the two right-hand columns show exactly
 how invisible the difference was before. A test pins this example against the

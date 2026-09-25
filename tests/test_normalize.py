@@ -23,7 +23,7 @@ def test_tokens_drop_immediate_repeats():
 
 def test_placeholders_removed():
     assert clean_text("<< Team Ecole") == "team ecole"
-    assert clean_text("-- Holloway Peak Inc") == "holloway peak inc"
+    assert clean_text("-- Northwind Peak Inc") == "northwind peak inc"
     assert clean_text("##8 Foo") == "8 foo"
     assert clean_text("<NULL>") == ""
 

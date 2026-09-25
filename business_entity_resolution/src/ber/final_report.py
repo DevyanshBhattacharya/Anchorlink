@@ -27,6 +27,7 @@ from .featurize import load_features
 from .io_utils import read_ground_truth
 from .labels import GroundTruth
 from .pipeline import decision_mask, sort_by_s1
+from .redact import mask_examples
 from .report import as_markdown, blocking_report, save_json
 from .retrieval import (DEFAULT_BLOCKING, cand_dir, candidates_as_dict,
                          load_candidates)
@@ -116,10 +117,19 @@ def _run_validator() -> Dict:
            "--candidate", str(config.OUTPUT_DIR / "candidate_pairs.tsv"),
            "--test-dir", str(config.TEST_DIR), "--check-ids"]
     res = subprocess.run(cmd, capture_output=True, text=True)
-    return {"command": " ".join(cmd), "returncode": res.returncode,
+    return {"command": _relative(" ".join(cmd)), "returncode": res.returncode,
             "passed": res.returncode == 0,
-            "stdout": res.stdout.strip().splitlines()[-12:],
-            "stderr": res.stderr.strip()[-500:]}
+            "stdout": [_relative(line) for line in res.stdout.strip().splitlines()[-12:]],
+            "stderr": _relative(res.stderr.strip()[-500:])}
+
+
+def _relative(text: str) -> str:
+    """Strip the checkout path out of anything that gets written to a report.
+
+    Reports are committed, and an absolute path publishes the machine's user
+    name for no benefit.
+    """
+    return text.replace(str(config.REPO_ROOT) + "/", "").replace(str(config.REPO_ROOT), ".")
 
 
 def _parse_rule(text: str | None):
@@ -158,6 +168,11 @@ def main(argv=None) -> None:
     ap.add_argument("--validate", action="store_true", default=True,
                     help="run the official validator and record its output")
     ap.add_argument("--no-validate", dest="validate", action="store_false")
+    ap.add_argument("--redact", action="store_true", default=True,
+                    help="mask business names and addresses in the worked examples "
+                         "(on by default: this report is committed to git)")
+    ap.add_argument("--no-redact", dest="redact", action="store_false",
+                    help="keep the real records — for local reading only")
     args = ap.parse_args(argv)
 
     bcfg = DEFAULT_BLOCKING
@@ -186,7 +201,7 @@ def main(argv=None) -> None:
     if stack_dir is None:
         raise SystemExit("no trained stack found — run `ber.cli all` first")
     stack = Stack.load(stack_dir)
-    rep["stack_dir"] = str(stack_dir)
+    rep["stack_dir"] = _relative(str(stack_dir))
     rep["stack"] = stack.info
 
     per_country = {}
@@ -218,7 +233,11 @@ def main(argv=None) -> None:
         per_country[c] = b
         rep["matching"][c] = b
         print(f"[report] {c}: error analysis ...", flush=True)
-        rep["errors"][c] = error_analysis(Kv, final_p, y, pm, "train", c, args.examples)
+        errs = error_analysis(Kv, final_p, y, pm, "train", c, args.examples)
+        if args.redact:
+            for kind in ("false_positives", "false_negatives"):
+                errs[kind]["examples"] = mask_examples(errs[kind]["examples"])
+        rep["errors"][c] = errs
         rep["segments"][c] = segment_report(Kv, final_p, y, pm, gt_dict, keys)
         del Xv, Kv, variants, final_p
         gc.collect()
@@ -250,7 +269,7 @@ def main(argv=None) -> None:
     out_md = Path(args.out) if args.out else config.REPORT_DIR / "final_report.md"
     out_md.write_text(md)
     print(md)
-    print(f"\n[final_report] -> {out_md} and {out_json}")
+    print(f"\n[final_report] -> {_relative(str(out_md))} and {_relative(str(out_json))}")
 
 
 def render(rep: Dict, bcfg) -> str:

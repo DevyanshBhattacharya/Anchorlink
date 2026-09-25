@@ -243,50 +243,50 @@
       "cand": "S2-83808461",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "Valiant Entertainment Private Limited",
-      "s1_addr": "Dd Trade Tower 2Nd Floor 36/2342 F-3 (Part) Kaloor Kadavanthara Ernakulam Kl, Ernakulam, Kerala",
-      "cand_name": "Valiant Entertainment Limited",
-      "cand_addr": "DD TRADE TOWER 2ND FLOOR 36/2342 F-3 (PART) KALOOR KADAVANTHARA ERNAKULAM KL, ERNAKULAM, Kerala"
+      "s1_name": "W1 W2 Private Limited",
+      "s1_addr": "W3 W4 Tower W5 Floor 36/2342 W6-3 (W7) W8 W9 W10 W11, W10, W12",
+      "cand_name": "W1 W2 Limited",
+      "cand_addr": "W3 W4 TOWER W5 FLOOR 36/2342 W6-3 (W7) W8 W9 W10 W11, W10, W12"
      },
      {
       "s1": "S1-394185437",
       "cand": "S2-514854666",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "GE Brokers Private Limited",
-      "s1_addr": "Pn 80 Panchaseel Nagar Nagpur, Nagpur, Maharashtra",
-      "cand_name": "GE  Brokers Limited",
-      "cand_addr": "PN 80 PANCHASEEL NAGAR NAGPUR, NAGPUR, Maharashtra"
+      "s1_name": "W1 W2 Private Limited",
+      "s1_addr": "W3 80 W4 Nagar W5, W5, W6",
+      "cand_name": "W1  W2 Limited",
+      "cand_addr": "W3 80 W4 NAGAR W5, W5, W6"
      },
      {
       "s1": "S1-32881467",
       "cand": "S2-442883886",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "Indore India Limited",
-      "s1_addr": "4Th Floor, Rcm Icon, 3/1, Race Cource Road, -Opp. Abhay, Prashal Main Road, Indore, Indore, Madhya Pradesh",
-      "cand_name": "Indore India",
-      "cand_addr": "4TH FLOOR, RCM ICON, 3/1, RACE COURCE ROAD, INDORE, Madhya Pradesh"
+      "s1_name": "W1 W2 Limited",
+      "s1_addr": "W3 Floor, W4 W5, 3/1, W6 W7 Road, -Opp. W8, W9 Main Road, W1, W1, W10 W11",
+      "cand_name": "W1 W2",
+      "cand_addr": "W3 FLOOR, W4 W5, 3/1, W6 W7 ROAD, W1, W10 W11"
      },
      {
       "s1": "S1-824167956",
       "cand": "S3-769162895",
       "p": 0.9999,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "Jain Estate Private Limited",
-      "s1_addr": "23/1 Principal Khudiram Boseroad, Kolkata, Calcutta, West Bengal",
-      "cand_name": "Jain Estate Limited",
-      "cand_addr": "23/1 Principal Khudiram Boseroad, Calcutta, Beadon Street, WB"
+      "s1_name": "W1 W2 Private Limited",
+      "s1_addr": "23/1 W3 W4 W5, W6, W7, West W8",
+      "cand_name": "W1 W2 Limited",
+      "cand_addr": "23/1 W3 W4 W5, W7, W9 Street, W10"
      },
      {
       "s1": "S1-876713311",
       "cand": "S2-846129294",
       "p": 0.9999,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "Nath Air Center",
-      "s1_addr": "House No 1 Mangu Panna Landmark Near Tatesar Wala Rasta Village Jaunti Delhi, Delhi, New Delhi, Delhi",
-      "cand_name": "NATH AIR C\u00c9NTER LLP",
-      "cand_addr": "HOUSE NO 1 MANGU PANNA LANDMARK NEAR TATESAR WALA RASTA VILLAGE JAUNTI DELHI, DELHI, \u0926\u093f\u0932\u094d\u0932\u0940"
+      "s1_name": "W1 W2 W3",
+      "s1_addr": "House No 1 W4 W5 W6 Near W7 W8 W9 W10 W11 W12, W12, New W12, W12",
+      "cand_name": "W1 W2 W13 LLP",
+      "cand_addr": "HOUSE NO 1 W4 W5 W6 NEAR W7 W8 W9 W10 W11 W12, W12, W14"
      }
     ]
    },
@@ -340,19 +340,19 @@
       "cand": "S3-720474325",
       "p": 0.0,
       "pattern": "house numbers differ by 3-20 (same street, a few doors away)",
-      "s1_name": "Leisure Brothers Private Limited",
-      "s1_addr": "Tf 29 Samanvay Sequence Manjalpur Road, Vadodara, Gujarat",
-      "cand_name": "Calosynsol",
-      "cand_addr": "Tf 2-9 Samanvay Sequence Majnalpur Road, Baroda, Vadodara, \u0a97\u0ac1\u0a9c\u0ab0\u0abe\u0aa4"
+      "s1_name": "W1 W2 Private Limited",
+      "s1_addr": "W3 29 W4 W5 W6 Road, W7, W8",
+      "cand_name": "W9",
+      "cand_addr": "W3 2-9 W4 W5 W10 Road, W11, W7, W12"
      },
      {
       "s1": "S1-118198262",
       "cand": "S2-615813343",
       "p": 0.0,
       "pattern": "missing address on one side",
-      "s1_name": "Future Products Limited",
-      "s1_addr": "Calcutta, West Bengal, Kolkata, 4/1A Dr Shyama Das Row",
-      "cand_name": "FUTURE LIMITED CENTER Enterprises",
+      "s1_name": "W1 W2 Limited",
+      "s1_addr": "W3, West W4, W5, 4/W6 Dr W7 W8 W9",
+      "cand_name": "W1 LIMITED W10 W11",
       "cand_addr": ""
      },
      {
@@ -360,19 +360,19 @@
       "cand": "S2-706740051",
       "p": 0.0,
       "pattern": "no shared name token",
-      "s1_name": "India Maharashtra Vyapaar Private Limited",
-      "s1_addr": "A-19-22, 3Rd Floor, Highway Towers Pune Mumbai Road, Chinchwad, Pune, Maharashtra",
-      "cand_name": "Synsol",
-      "cand_addr": "Maharashtra, A-19-2, CHINCHWAD, PUNE"
+      "s1_name": "W1 W2 W3 Private Limited",
+      "s1_addr": "W4-19-22, W5 Floor, Highway W6 W7 W8 Road, W9, W7, W2",
+      "cand_name": "W10",
+      "cand_addr": "W2, W4-19-2, W9, W7"
      },
      {
       "s1": "S1-393620770",
       "cand": "S3-415516197",
       "p": 0.0,
       "pattern": "missing address on one side",
-      "s1_name": "Ruby Pharmaceutical",
-      "s1_addr": "P. No. 165 2Nd Floor Rathore Nagar Vaishali Nagar, Jaipur, Rajasthan",
-      "cand_name": "Dr Ruby [Center]",
+      "s1_name": "W1 W2",
+      "s1_addr": "W3. No. 165 W4 Floor W5 Nagar W6 Nagar, W7, W8",
+      "cand_name": "Dr W1 [W9]",
       "cand_addr": ""
      },
      {
@@ -380,9 +380,9 @@
       "cand": "S2-535839838",
       "p": 0.0,
       "pattern": "missing address on one side",
-      "s1_name": "APS Foundation Pvt Ltd",
-      "s1_addr": "Flat No. 123 Sfs, Munirka Vihar, Opp. Jnu, New Delhi, South West Delhi, Delhi",
-      "cand_name": "APS APS Pvt Ltd Partners",
+      "s1_name": "W1 W2 Pvt Ltd",
+      "s1_addr": "Flat No. 123 W3, W4 W5, Opp. W6, New W7, South West W7, W7",
+      "cand_name": "W1 W1 Pvt Ltd W8",
       "cand_addr": ""
      }
     ]
@@ -439,50 +439,50 @@
       "cand": "S3-839053375",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "Pediatric Dentistry Group of Ashland City Group",
-      "s1_addr": "151 Action Lane, Ashland City, TN",
-      "cand_name": "Pediatric Dentistry Group of Ashland City Group Corp",
-      "cand_addr": "151 Action Lane, Ashland City, Tennessee"
+      "s1_name": "W1 W2 W3 of W4 W5 W3",
+      "s1_addr": "151 W6 Lane, W4 W5, W7",
+      "cand_name": "W1 W2 W3 of W4 W5 W3 Corp",
+      "cand_addr": "151 W6 Lane, W4 W5, W8"
      },
      {
       "s1": "S1-197010175",
       "cand": "S2-453673792",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "Corner Hypnosis",
-      "s1_addr": "16900 Salmonberry Road, Brookings, OR",
-      "cand_name": "Corner Hypnosis LLC",
-      "cand_addr": "16900 SALMONBERRY RD, BROOKINGS, OR"
+      "s1_name": "W1 W2",
+      "s1_addr": "16900 W3 Road, W4, W5",
+      "cand_name": "W1 W2 LLC",
+      "cand_addr": "16900 W3 RD, W4, W5"
      },
      {
       "s1": "S1-252735592",
       "cand": "S2-992076392",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "Lowell Cancer Foundation",
-      "s1_addr": "MA, 33 Burns Street, Lowell",
-      "cand_name": "Lowell Cancer Foundation Inc",
-      "cand_addr": "33 BURNS ST, LOWELL, MA"
+      "s1_name": "W1 W2 W3",
+      "s1_addr": "W4, 33 W5 Street, W1",
+      "cand_name": "W1 W2 W3 Inc",
+      "cand_addr": "33 W5 ST, W1, W4"
      },
      {
       "s1": "S1-39256764",
       "cand": "S3-330274012",
       "p": 1.0,
       "pattern": "identical name, same number",
-      "s1_name": "Internal Medicine Frontier Group",
-      "s1_addr": "3699 Broadbridge Avenue, Unit Unit 120, Stratford, CT",
-      "cand_name": "Internal Medicine Frontier Group Group",
-      "cand_addr": "3699 Broadbridge Avenue, # Unit 120, Stratford, Connecticut"
+      "s1_name": "W1 W2 W3 W4",
+      "s1_addr": "3699 W5 Avenue, W6 W6 120, W7, W8",
+      "cand_name": "W1 W2 W3 W4 W4",
+      "cand_addr": "3699 W5 Avenue, # W6 120, W7, W9"
      },
      {
       "s1": "S1-779212870",
       "cand": "S3-217534767",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "First Transit Dynamics Company",
-      "s1_addr": "570 Quarry Place Court, Reisterstown, MD",
-      "cand_name": "First Transit Dynamics Co.",
-      "cand_addr": "570 Quarry Place Ct, Reisterstown, Maryland"
+      "s1_name": "W1 W2 W3 Company",
+      "s1_addr": "570 W4 Place W5, W6, W7",
+      "cand_name": "W1 W2 W3 Co.",
+      "cand_addr": "570 W4 Place W8, W6, W9"
      }
     ]
    },
@@ -536,9 +536,9 @@
       "cand": "S3-473472141",
       "p": 0.0,
       "pattern": "missing address on one side",
-      "s1_name": "Meridian Inc",
-      "s1_addr": "CT, Bristol, 117 Lewis Road",
-      "cand_name": "Meridian Associates",
+      "s1_name": "W1 Inc",
+      "s1_addr": "W2, W3, 117 W4 Road",
+      "cand_name": "W1 W5",
       "cand_addr": ""
      },
      {
@@ -546,29 +546,29 @@
       "cand": "S2-422130055",
       "p": 0.0,
       "pattern": "no house number on one side",
-      "s1_name": "Oden & Vermette Corp",
-      "s1_addr": "1517 Delaware Avenue, Unit R, Tulsa, OK",
-      "cand_name": "K0RFLUXDREX",
-      "cand_addr": "TULSA, OK, DELAWARE AVENUE"
+      "s1_name": "W1 & W2 Corp",
+      "s1_addr": "1517 W3 Avenue, W4 W5, W6, W7",
+      "cand_name": "W8",
+      "cand_addr": "W6, W7, W3 AVENUE"
      },
      {
       "s1": "S1-630430527",
       "cand": "S2-919947855",
       "p": 0.0,
       "pattern": "no shared name token",
-      "s1_name": "Owens & Cannon Inc.",
-      "s1_addr": "1452 Ellsworth Road, Unit 1339, Mesa, AZ",
-      "cand_name": "CALOBRIXZETA",
-      "cand_addr": "1452. ELLSWORTH RD, MESA, AZ"
+      "s1_name": "W1 & W2 Inc.",
+      "s1_addr": "1452 W3 Road, W4 1339, W5, W6",
+      "cand_name": "W7",
+      "cand_addr": "1452. W3 RD, W5, W6"
      },
      {
       "s1": "S1-604417590",
       "cand": "S2-621008713",
       "p": 0.0,
       "pattern": "missing address on one side",
-      "s1_name": "Foundry Allocation",
-      "s1_addr": "1904 Terrace Court, Jeffersonville, IN",
-      "cand_name": "Foundry Center",
+      "s1_name": "W1 W2",
+      "s1_addr": "1904 W3 W4, W5, W6",
+      "cand_name": "W1 W7",
       "cand_addr": ""
      },
      {
@@ -576,9 +576,9 @@
       "cand": "S2-836191561",
       "p": 0.0,
       "pattern": "missing address on one side",
-      "s1_name": "24HR Fitness",
-      "s1_addr": "2326 Country Gables Drive, Phoenix, AZ",
-      "cand_name": "24HR-Center",
+      "s1_name": "W1 W2",
+      "s1_addr": "2326 W3 W4 Drive, W5, W6",
+      "cand_name": "W1-W7",
       "cand_addr": ""
      }
     ]
@@ -661,7 +661,7 @@
    }
   ]
  },
- "stack_dir": "/Users/devyanshbhattacharya/Vs Code/ML Challenge 26/work/models/b3_k30_u80_df1_qb60k_key20_pr60__m1120k_pre50k_m250k_cal30k",
+ "stack_dir": "work/models/b3_k30_u80_df1_qb60k_key20_pr60__m1120k_pre50k_m250k_cal30k",
  "stack": {
   "countries": [
    "India",
@@ -979,12 +979,12 @@
   }
  ],
  "validator": {
-  "command": "/Users/devyanshbhattacharya/Vs Code/ML Challenge 26/.venv/bin/python /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/utils/validate_submission.py --matching /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/output/matching_results.tsv --candidate /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/output/candidate_pairs.tsv --test-dir /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/dataset/test --check-ids",
+  "command": ".venv/bin/python student_resource/utils/validate_submission.py --matching output/matching_results.tsv --candidate output/candidate_pairs.tsv --test-dir student_resource/dataset/test --check-ids",
   "returncode": 0,
   "passed": true,
   "stdout": [
    "ML Challenge 2026 \u2014 submission validator",
-   "  test dir: /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/dataset/test",
+   "  test dir: student_resource/dataset/test",
    "  required S1 entities: 1732544",
    "  valid S2/S3 match IDs: 9969589",
    "  matching_results.tsv: 1732544 rows (111981 empty, 1620563 non-empty).",

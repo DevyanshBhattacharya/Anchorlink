@@ -101,20 +101,20 @@ Test mix (derived from `test_source1.tsv`): {'India': 0.4675, 'US': 0.3827, 'LOC
 Examples:
 
 * `S1-499359562` vs `S2-83808461` (p=1.0) — name differs by a legal form or one token  
-  S1: **Valiant Entertainment Private Limited** · Dd Trade Tower 2Nd Floor 36/2342 F-3 (Part) Kaloor Kadavanthara Ernakulam Kl, Ernakulam, Kerala  
-  cand: **Valiant Entertainment Limited** · DD TRADE TOWER 2ND FLOOR 36/2342 F-3 (PART) KALOOR KADAVANTHARA ERNAKULAM KL, ERNAKULAM, Kerala
+  S1: **W1 W2 Private Limited** · W3 W4 Tower W5 Floor 36/2342 W6-3 (W7) W8 W9 W10 W11, W10, W12  
+  cand: **W1 W2 Limited** · W3 W4 TOWER W5 FLOOR 36/2342 W6-3 (W7) W8 W9 W10 W11, W10, W12
 * `S1-394185437` vs `S2-514854666` (p=1.0) — name differs by a legal form or one token  
-  S1: **GE Brokers Private Limited** · Pn 80 Panchaseel Nagar Nagpur, Nagpur, Maharashtra  
-  cand: **GE  Brokers Limited** · PN 80 PANCHASEEL NAGAR NAGPUR, NAGPUR, Maharashtra
+  S1: **W1 W2 Private Limited** · W3 80 W4 Nagar W5, W5, W6  
+  cand: **W1  W2 Limited** · W3 80 W4 NAGAR W5, W5, W6
 * `S1-32881467` vs `S2-442883886` (p=1.0) — name differs by a legal form or one token  
-  S1: **Indore India Limited** · 4Th Floor, Rcm Icon, 3/1, Race Cource Road, -Opp. Abhay, Prashal Main Road, Indore, Indore, Madhya Pradesh  
-  cand: **Indore India** · 4TH FLOOR, RCM ICON, 3/1, RACE COURCE ROAD, INDORE, Madhya Pradesh
+  S1: **W1 W2 Limited** · W3 Floor, W4 W5, 3/1, W6 W7 Road, -Opp. W8, W9 Main Road, W1, W1, W10 W11  
+  cand: **W1 W2** · W3 FLOOR, W4 W5, 3/1, W6 W7 ROAD, W1, W10 W11
 * `S1-824167956` vs `S3-769162895` (p=0.9999) — name differs by a legal form or one token  
-  S1: **Jain Estate Private Limited** · 23/1 Principal Khudiram Boseroad, Kolkata, Calcutta, West Bengal  
-  cand: **Jain Estate Limited** · 23/1 Principal Khudiram Boseroad, Calcutta, Beadon Street, WB
+  S1: **W1 W2 Private Limited** · 23/1 W3 W4 W5, W6, W7, West W8  
+  cand: **W1 W2 Limited** · 23/1 W3 W4 W5, W7, W9 Street, W10
 * `S1-876713311` vs `S2-846129294` (p=0.9999) — name differs by a legal form or one token  
-  S1: **Nath Air Center** · House No 1 Mangu Panna Landmark Near Tatesar Wala Rasta Village Jaunti Delhi, Delhi, New Delhi, Delhi  
-  cand: **NATH AIR CÉNTER LLP** · HOUSE NO 1 MANGU PANNA LANDMARK NEAR TATESAR WALA RASTA VILLAGE JAUNTI DELHI, DELHI, दिल्ली
+  S1: **W1 W2 W3** · House No 1 W4 W5 W6 Near W7 W8 W9 W10 W11 W12, W12, New W12, W12  
+  cand: **W1 W2 W13 LLP** · HOUSE NO 1 W4 W5 W6 NEAR W7 W8 W9 W10 W11 W12, W12, W14
 
 ### India — false negatives (26,825)
 
@@ -132,20 +132,20 @@ Examples:
 Examples:
 
 * `S1-428012519` vs `S3-720474325` (p=0.0) — house numbers differ by 3-20 (same street, a few doors away)  
-  S1: **Leisure Brothers Private Limited** · Tf 29 Samanvay Sequence Manjalpur Road, Vadodara, Gujarat  
-  cand: **Calosynsol** · Tf 2-9 Samanvay Sequence Majnalpur Road, Baroda, Vadodara, ગુજરાત
+  S1: **W1 W2 Private Limited** · W3 29 W4 W5 W6 Road, W7, W8  
+  cand: **W9** · W3 2-9 W4 W5 W10 Road, W11, W7, W12
 * `S1-118198262` vs `S2-615813343` (p=0.0) — missing address on one side  
-  S1: **Future Products Limited** · Calcutta, West Bengal, Kolkata, 4/1A Dr Shyama Das Row  
-  cand: **FUTURE LIMITED CENTER Enterprises** · 
+  S1: **W1 W2 Limited** · W3, West W4, W5, 4/W6 Dr W7 W8 W9  
+  cand: **W1 LIMITED W10 W11** · 
 * `S1-711985992` vs `S2-706740051` (p=0.0) — no shared name token  
-  S1: **India Maharashtra Vyapaar Private Limited** · A-19-22, 3Rd Floor, Highway Towers Pune Mumbai Road, Chinchwad, Pune, Maharashtra  
-  cand: **Synsol** · Maharashtra, A-19-2, CHINCHWAD, PUNE
+  S1: **W1 W2 W3 Private Limited** · W4-19-22, W5 Floor, Highway W6 W7 W8 Road, W9, W7, W2  
+  cand: **W10** · W2, W4-19-2, W9, W7
 * `S1-393620770` vs `S3-415516197` (p=0.0) — missing address on one side  
-  S1: **Ruby Pharmaceutical** · P. No. 165 2Nd Floor Rathore Nagar Vaishali Nagar, Jaipur, Rajasthan  
-  cand: **Dr Ruby [Center]** · 
+  S1: **W1 W2** · W3. No. 165 W4 Floor W5 Nagar W6 Nagar, W7, W8  
+  cand: **Dr W1 [W9]** · 
 * `S1-254424163` vs `S2-535839838` (p=0.0) — missing address on one side  
-  S1: **APS Foundation Pvt Ltd** · Flat No. 123 Sfs, Munirka Vihar, Opp. Jnu, New Delhi, South West Delhi, Delhi  
-  cand: **APS APS Pvt Ltd Partners** · 
+  S1: **W1 W2 Pvt Ltd** · Flat No. 123 W3, W4 W5, Opp. W6, New W7, South West W7, W7  
+  cand: **W1 W1 Pvt Ltd W8** · 
 
 ### US — false positives (4,633)
 
@@ -163,20 +163,20 @@ Examples:
 Examples:
 
 * `S1-291062612` vs `S3-839053375` (p=1.0) — name differs by a legal form or one token  
-  S1: **Pediatric Dentistry Group of Ashland City Group** · 151 Action Lane, Ashland City, TN  
-  cand: **Pediatric Dentistry Group of Ashland City Group Corp** · 151 Action Lane, Ashland City, Tennessee
+  S1: **W1 W2 W3 of W4 W5 W3** · 151 W6 Lane, W4 W5, W7  
+  cand: **W1 W2 W3 of W4 W5 W3 Corp** · 151 W6 Lane, W4 W5, W8
 * `S1-197010175` vs `S2-453673792` (p=1.0) — name differs by a legal form or one token  
-  S1: **Corner Hypnosis** · 16900 Salmonberry Road, Brookings, OR  
-  cand: **Corner Hypnosis LLC** · 16900 SALMONBERRY RD, BROOKINGS, OR
+  S1: **W1 W2** · 16900 W3 Road, W4, W5  
+  cand: **W1 W2 LLC** · 16900 W3 RD, W4, W5
 * `S1-252735592` vs `S2-992076392` (p=1.0) — name differs by a legal form or one token  
-  S1: **Lowell Cancer Foundation** · MA, 33 Burns Street, Lowell  
-  cand: **Lowell Cancer Foundation Inc** · 33 BURNS ST, LOWELL, MA
+  S1: **W1 W2 W3** · W4, 33 W5 Street, W1  
+  cand: **W1 W2 W3 Inc** · 33 W5 ST, W1, W4
 * `S1-39256764` vs `S3-330274012` (p=1.0) — identical name, same number  
-  S1: **Internal Medicine Frontier Group** · 3699 Broadbridge Avenue, Unit Unit 120, Stratford, CT  
-  cand: **Internal Medicine Frontier Group Group** · 3699 Broadbridge Avenue, # Unit 120, Stratford, Connecticut
+  S1: **W1 W2 W3 W4** · 3699 W5 Avenue, W6 W6 120, W7, W8  
+  cand: **W1 W2 W3 W4 W4** · 3699 W5 Avenue, # W6 120, W7, W9
 * `S1-779212870` vs `S3-217534767` (p=1.0) — name differs by a legal form or one token  
-  S1: **First Transit Dynamics Company** · 570 Quarry Place Court, Reisterstown, MD  
-  cand: **First Transit Dynamics Co.** · 570 Quarry Place Ct, Reisterstown, Maryland
+  S1: **W1 W2 W3 Company** · 570 W4 Place W5, W6, W7  
+  cand: **W1 W2 W3 Co.** · 570 W4 Place W8, W6, W9
 
 ### US — false negatives (21,738)
 
@@ -194,20 +194,20 @@ Examples:
 Examples:
 
 * `S1-591668623` vs `S3-473472141` (p=0.0) — missing address on one side  
-  S1: **Meridian Inc** · CT, Bristol, 117 Lewis Road  
-  cand: **Meridian Associates** · 
+  S1: **W1 Inc** · W2, W3, 117 W4 Road  
+  cand: **W1 W5** · 
 * `S1-476174685` vs `S2-422130055` (p=0.0) — no house number on one side  
-  S1: **Oden & Vermette Corp** · 1517 Delaware Avenue, Unit R, Tulsa, OK  
-  cand: **K0RFLUXDREX** · TULSA, OK, DELAWARE AVENUE
+  S1: **W1 & W2 Corp** · 1517 W3 Avenue, W4 W5, W6, W7  
+  cand: **W8** · W6, W7, W3 AVENUE
 * `S1-630430527` vs `S2-919947855` (p=0.0) — no shared name token  
-  S1: **Owens & Cannon Inc.** · 1452 Ellsworth Road, Unit 1339, Mesa, AZ  
-  cand: **CALOBRIXZETA** · 1452. ELLSWORTH RD, MESA, AZ
+  S1: **W1 & W2 Inc.** · 1452 W3 Road, W4 1339, W5, W6  
+  cand: **W7** · 1452. W3 RD, W5, W6
 * `S1-604417590` vs `S2-621008713` (p=0.0) — missing address on one side  
-  S1: **Foundry Allocation** · 1904 Terrace Court, Jeffersonville, IN  
-  cand: **Foundry Center** · 
+  S1: **W1 W2** · 1904 W3 W4, W5, W6  
+  cand: **W1 W7** · 
 * `S1-144285388` vs `S2-836191561` (p=0.0) — missing address on one side  
-  S1: **24HR Fitness** · 2326 Country Gables Drive, Phoenix, AZ  
-  cand: **24HR-Center** · 
+  S1: **W1 W2** · 2326 W3 W4 Drive, W5, W6  
+  cand: **W1-W7** · 
 
 ## Ablation by phase
 
@@ -254,13 +254,13 @@ Examples:
 
 ### Official validator
 
-`/Users/devyanshbhattacharya/Vs Code/ML Challenge 26/.venv/bin/python /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/utils/validate_submission.py --matching /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/output/matching_results.tsv --candidate /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/output/candidate_pairs.tsv --test-dir /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/dataset/test --check-ids`
+`.venv/bin/python student_resource/utils/validate_submission.py --matching output/matching_results.tsv --candidate output/candidate_pairs.tsv --test-dir student_resource/dataset/test --check-ids`
 
 **PASS** (exit 0)
 
 ```
 ML Challenge 2026 — submission validator
-  test dir: /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/dataset/test
+  test dir: student_resource/dataset/test
   required S1 entities: 1732544
   valid S2/S3 match IDs: 9969589
   matching_results.tsv: 1732544 rows (111981 empty, 1620563 non-empty).

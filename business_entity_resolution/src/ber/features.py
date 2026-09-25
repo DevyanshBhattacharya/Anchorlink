@@ -266,17 +266,18 @@ def pair_feature_row(v1: RecordView, v2: RecordView, roles: TokenRoles,
     #
     # This is the feature the error analysis demanded, and it has to look at the
     # **full** token list, not the core name.  Worked example from the training
-    # data: S1-499359562 "Valiant Entertainment Private Limited" has three true
-    # matches, all keeping *Private* — and "Valiant Entertainment Limited", at a
+    # data (records masked; see tests/test_features.py, which reads them by id):
+    # S1-499359562 "<Brand> <Type> Private Limited" has three true matches, all
+    # keeping *Private* — and S2-83808461 "<Brand> <Type> Limited", at a
     # byte-identical address, matches no S1 at all.  Every other feature is blind
     # to that word:
     #   * the core name strips it, because the affix bigram (private, limited)
     #     is flagged, so both records reduce to "valiant entertainment";
     #   * `token_set_ratio` returns a flat 100 whenever one set contains the other;
-    #   * `private` is common in Indian names, so its IDF is low and the weighted
-    #     unmatched-mass features barely move.
+    #   * the dropped word is common in this country's names, so its IDF is low
+    #     and the weighted unmatched-mass features barely move.
     # Counting *non-affix* one-sided tokens separates them cleanly: the distractor
-    # drops `private` (not a flagged affix, so it counts), while the true match
+    # drops a word that is not a flagged affix, so it counts, while the true match
     # differs only by `limited` vs `ltd` (both affixes, and abbreviations of each
     # other, so neither counts).
     t1, t2 = set(v1.name_toks), set(v2.name_toks)

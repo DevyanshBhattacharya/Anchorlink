@@ -58,8 +58,8 @@ def feats(roles, n1, a1, n2, a2, country="US"):
 
 
 def test_identical_records_score_at_the_top(roles):
-    f = feats(roles, "Apex Digital LLC", "1795 Westchester Drive, High Point, NC",
-              "Apex Digital LLC", "1795 Westchester Drive, High Point, NC")
+    f = feats(roles, "Apex Digital LLC", "1795 Brackendale Drive, High Point, NC",
+              "Apex Digital LLC", "1795 Brackendale Drive, High Point, NC")
     assert f["name_jw"] == 1.0
     assert f["name_lev"] == 1.0
     assert f["addr_contain"] == pytest.approx(1.0)
@@ -68,27 +68,27 @@ def test_identical_records_score_at_the_top(roles):
 
 
 def test_zero_padded_number_is_an_exact_match(roles):
-    f = feats(roles, "Apex Digital LLC", "3182 Lynchburg Street",
+    f = feats(roles, "Apex Digital LLC", "3182 Ashgrove Street",
               "APEX DIGITAL", "003182 LYNCHBURG STREET")
     assert f["num_rel"] == 1.0          # class 1: a number in common
 
 
 def test_neighbouring_house_number_is_the_hard_negative(roles):
     """The dominant same-name hard negative: same street, a few doors away."""
-    f = feats(roles, "Apex Digital LLC", "616 Orville Avenue, Columbus, OH",
-              "Apex Digital LLC", "627 Orville Avenue, Columbus, OH")
+    f = feats(roles, "Apex Digital LLC", "616 Kingsmere Avenue, Columbus, OH",
+              "Apex Digital LLC", "627 Kingsmere Avenue, Columbus, OH")
     assert f["num_rel"] == 4.0          # class 4: differ by 3-20
     assert f["name_jw"] == 1.0          # names give no evidence at all
     assert f["num_min_diff"] == pytest.approx(math.log1p(11))
 
 
 def test_number_truncation_class(roles):
-    f = feats(roles, "X Ltd", "1447 Dolley Madison Blvd", "X Ltd", "447 Dolley Madison Blvd")
+    f = feats(roles, "X Ltd", "1447 Harborview Blvd", "X Ltd", "447 Harborview Blvd")
     assert f["num_rel"] == 2.0
 
 
 def test_missing_address_is_nan_not_zero(roles):
-    f = feats(roles, "Apex Digital LLC", "1795 Westchester Drive", "Apex Digital LLC", "")
+    f = feats(roles, "Apex Digital LLC", "1795 Brackendale Drive", "Apex Digital LLC", "")
     assert f["addr_missing"] == 1.0
     assert math.isnan(f["addr_contain"])
     assert math.isnan(f["num_min_diff"])
@@ -124,35 +124,72 @@ def test_domain_alias(roles):
 
 
 def test_the_dropped_word_that_every_other_feature_missed(real_roles):
-    """The worked example from the training data, on the real corpus statistics.
+    """The worked example from the training data, looked up by id.
 
-    S1-499359562 "Valiant Entertainment Private Limited" has three true matches,
-    all keeping *Private*; "Valiant Entertainment Limited" at a byte-identical
-    address matches no S1 at all.  Three features are blind to that word — the
-    core name strips it (the affix bigram is flagged), `token_set_ratio` returns
-    100 for a subset, and its IDF is too low to move the weighted mass — so the
-    one-sided token count has to carry it.
+    S1-499359562 has three true matches in the ground truth, all of which keep a
+    word that a fourth record — which matches no S1 entity at all — drops.  Three
+    features are blind to it: the core name strips it (the affix bigram is
+    flagged), `token_set_ratio` returns 100 for a subset, and its IDF is too low
+    to move the weighted mass.  The one-sided token count has to carry it.
+
+    The records are read from the dataset rather than written down here, so no
+    challenge data lives in this repository.
     """
-    addr = ("Dd Trade Tower 2Nd Floor 36/2342 F-3 (Part) Kaloor Kadavanthara "
-            "Ernakulam Kl, Ernakulam, Kerala")
-    s1 = ("Valiant Entertainment Private Limited", addr)
-    truths = [("Valiant Entertainment-Private Ltd", "HN 789 " + addr),
-              ("Valiant Entertainment Private", addr),
-              ("Entertainment Valiant Private [Limited]", addr)]
-    distractor = ("Valiant Entertainment Limited", addr)
+    from ber import config
+    from ber.io_utils import read_ground_truth
 
-    def f(cand):
-        return feats(real_roles, s1[0], s1[1], cand[0], cand[1], country="India")
+    if not config.FILES[("train", "S1")].is_file():
+        pytest.skip("training data not present")
 
-    for cand in truths:
+    s1_id, distractor_id = "S1-499359562", "S2-83808461"
+    gt = read_ground_truth()
+    truth_ids = gt.get(s1_id)
+    if not truth_ids:
+        pytest.skip("this example is not in the provided ground truth")
+    assert distractor_id not in truth_ids, "the distractor must not be a true match"
+
+    rec = _lookup_records({s1_id, distractor_id, *truth_ids})
+    if len(rec) != 1 + 1 + len(truth_ids):
+        pytest.skip("could not read every record of the example")
+
+    s1_name, s1_addr = rec[s1_id]
+
+    def f(cand_id):
+        n, a = rec[cand_id]
+        return feats(real_roles, s1_name, s1_addr, n, a, country="India")
+
+    for cand in truth_ids:
         assert f(cand)["name_tok_only_1"] == 0.0, cand
-    assert f(distractor)["name_tok_only_1"] >= 1.0
+    assert f(distractor_id)["name_tok_only_1"] >= 1.0
 
     # and confirm the features that miss it really do miss it
-    for cand in truths + [distractor]:
+    for cand in list(truth_ids) + [distractor_id]:
         g = f(cand)
         assert g["name_tset"] == pytest.approx(1.0), cand
         assert g["name_idf_unmatched_1"] == pytest.approx(0.0, abs=1e-6), cand
+
+
+def _lookup_records(ids):
+    """{entity_id: (name, address)} read straight from the source TSVs."""
+    from ber import config
+    from ber.io_utils import READ_KW
+    import pandas as pd
+
+    want = set(ids)
+    out = {}
+    for src in ("S1", "S2", "S3"):
+        need = {i for i in want if i.startswith(src + "-")}
+        if not need:
+            continue
+        path = config.FILES[("train", src)]
+        for chunk in pd.read_csv(path, chunksize=500_000, **READ_KW):
+            hit = chunk[chunk["entity_id"].isin(need)]
+            for _, row in hit.iterrows():
+                out[row["entity_id"]] = (row["business_name"], row["business_address"])
+            need -= set(out)
+            if not need:
+                break
+    return out
 
 
 def test_ltd_and_limited_are_not_a_missing_word(real_roles):

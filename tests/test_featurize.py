@@ -37,10 +37,10 @@ def test_compute_block_shapes_and_set_columns(roles):
     n = 4
     block = Block(
         country="US",
-        q_name=["Apex Digital LLC"], q_addr=["1795 Westchester Dr"],
+        q_name=["Apex Digital LLC"], q_addr=["1795 Brackendale Dr"],
         c_name=["Apex Digital", "Apex Digital Inc", "Beta Tools", "Apex Digital"],
-        c_addr=["1795 Westchester Drive", "1799 Westchester Dr", "2 Other St",
-                "001795 Westchester Drive"],
+        c_addr=["1795 Brackendale Drive", "1799 Brackendale Dr", "2 Other St",
+                "001795 Brackendale Drive"],
         q_row=np.zeros(n, dtype=np.int32),
         c_row=np.arange(n, dtype=np.int32),
         src=np.array([2, 2, 3, 3], dtype=np.int8),

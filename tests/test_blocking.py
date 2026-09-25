@@ -7,12 +7,12 @@ from ber.blocking import (IndexConfig, SparseIndex, char_wb_ngrams, make_view,
 
 
 DOCS = [
-    ("Orelee's Barbershop", "1795 Westchester Drive, High Point, NC"),
-    ("Prime Money", "17560 Ellis Road, Tahlequah, OK"),
-    ("Orelees Barber Shop", "1795 Westchester Dr, High Point, North Carolina"),
-    ("B+ Retail Inc", "1712 Montebello Avenue, Phoenix, AZ"),
-    ("राम मार्केटिंग प्राइवेट लिमिटेड", "KH NO. -570/13, NEW DELHI, WEST DELHI, Delhi"),
-    ("Ram Marketing Private Limited", "KH No 570/13, New Delhi, West Delhi"),
+    ("Marlow's Barbershop", "1795 Kingsmere Drive, High Point, NC"),
+    ("Prime Money", "17560 Ellis Road, Rivermead, OK"),
+    ("Marlows Barber Shop", "1795 Kingsmere Dr, High Point, North Carolina"),
+    ("B+ Retail Inc", "1712 Elmcourt Avenue, Phoenix, AZ"),
+    ("तारा मार्केटिंग प्राइवेट लिमिटेड", "KH NO. -570/13, NEW DELHI, WEST DELHI, Delhi"),
+    ("Tara Marketing Private Limited", "KH No 570/13, New Delhi, West Delhi"),
 ]
 
 
@@ -36,7 +36,7 @@ def test_char_wb_is_word_bounded():
 
 def test_views():
     cfg = _cfg(view="name")
-    assert make_view(cfg, "Orelee's Barbershop", "1795 X") == "orelee s barbershop"
+    assert make_view(cfg, "Marlow's Barbershop", "1795 X") == "marlow s barbershop"
     assert make_view(_cfg(view="addr"), "N", "1795 X") == "1795 x"
     with pytest.raises(ValueError):
         make_view(_cfg(view="nope"), "a", "b")

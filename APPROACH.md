@@ -41,7 +41,7 @@ appears only in the test set and needs no code change — it simply gets its own
 ## 1. Normalisation — learn the language, don't hard-code it
 
 Business names arrive as `Pvt Ltd`, `Private Limited`, `LLC Anchor Angel`,
-`8913textiles.com`, `-- Holloway Peak Inc`, and `सूर्य गुजरात फूड्स`. Addresses arrive as
+`8913textiles.com`, `-- Northwind Peak Inc`, and a name in Devanagari. Addresses arrive as
 `003182 LYNCHBURG STREET`, `1447 → 447`, `4109-4111`, `Near Fortis Hospital`.
 
 Three layers, in increasing order of what they assume:
@@ -162,10 +162,10 @@ natively.
 Our first full run put **34.9% of India's false positives** in one bucket. Chasing the top
 example back to the raw files turned that from a label into a mechanism:
 
-`S1-499359562` — **"Valiant Entertainment Private Limited"**, Kaloor, Ernakulam. Its three
-true matches all keep *Private*: `"Valiant Entertainment-Private Ltd"`,
-`"Valiant Entertainment Private"`, `"Entertainment Valiant Private [Limited]"`.
-And `S2-83808461` — **"Valiant Entertainment Limited"**, at a byte-identical address —
+`S1-499359562` — **"«Brand» «Type» Private Limited"**, a Kochi address. Its three
+true matches all keep *Private*: `"«Brand» «Type»-Private Ltd"`,
+`"«Brand» «Type» Private"`, `"«Type» «Brand» Private [Limited]"`.
+And `S2-83808461` — **"«Brand» «Type» Limited"**, at a byte-identical address —
 matches **no S1 entity at all**.
 
 The distractor is the only one of the four that drops *Private*. The dataset's hard
@@ -179,10 +179,10 @@ flagged legal forms and treating `ltd`/`limited` as the same word:
 
 | | `name_tok_only_1` | `name_tset` | `name_idf_unmatched_1` |
 | --- | --- | --- | --- |
-| true: Valiant Entertainment-Private Ltd | **0** | 1.00 | 0.000 |
-| true: Valiant Entertainment Private | **0** | 1.00 | 0.000 |
-| true: Entertainment Valiant Private [Limited] | **0** | 1.00 | 0.000 |
-| **false: Valiant Entertainment Limited** | **1** | 1.00 | 0.000 |
+| true: «Brand» «Type»-Private Ltd | **0** | 1.00 | 0.000 |
+| true: «Brand» «Type» Private | **0** | 1.00 | 0.000 |
+| true: «Type» «Brand» Private [Limited] | **0** | 1.00 | 0.000 |
+| **false: «Brand» «Type» Limited** | **1** | 1.00 | 0.000 |
 
 Clean separation on one column; the two right-hand columns show how invisible it was.
 

@@ -11,7 +11,7 @@ torch = pytest.importorskip("torch")
 
 
 def test_serialise_has_a_fixed_field_order():
-    s = serialise("Apex Digital LLC", "1795 Westchester Dr", "US")
+    s = serialise("Apex Digital LLC", "1795 Brackendale Dr", "US")
     assert s.startswith("name: ")
     assert " | nums: " in s and " | addr: " in s and " | country: US" in s
     assert "1795" in s.split("nums:")[1].split("|")[0]

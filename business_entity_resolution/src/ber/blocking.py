@@ -74,7 +74,7 @@ def char_wb_ngrams(text: str, n: int = 3) -> List[str]:
     """Character n-grams inside word boundaries, as scikit-learn's ``char_wb``.
 
     Word-bounded grams beat plain character grams here because business fields
-    are reordered constantly ("OH, Columbus, 5559 Orville Avenue"), and a gram
+    are reordered constantly ("OH, Columbus, 5559 Kingsmere Avenue"), and a gram
     that straddles two words encodes an order that does not survive the noise.
     """
     out: List[str] = []

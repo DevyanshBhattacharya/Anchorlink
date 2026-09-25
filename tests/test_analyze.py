@@ -8,12 +8,12 @@ from ber.scoring import f05
 
 
 @pytest.mark.parametrize("qa,ca,want", [
-    ("616 Orville Ave", "627 Orville Ave", "house numbers differ by 3-20 (same street, a few doors away)"),
-    ("616 Orville Ave", "617 Orville Ave", "house numbers differ by 1-2 (same street, next door)"),
-    ("1447 Dolley Madison Blvd", "447 Dolley Madison Blvd", "house number truncated (1447 -> 447)"),
-    ("616 Orville Ave", "99999 Other Rd", "house numbers unrelated"),
-    ("616 Orville Ave", "Orville Ave", "no house number on one side"),
-    ("616 Orville Ave", "", "missing address on one side"),
+    ("616 Kingsmere Ave", "627 Kingsmere Ave", "house numbers differ by 3-20 (same street, a few doors away)"),
+    ("616 Kingsmere Ave", "617 Kingsmere Ave", "house numbers differ by 1-2 (same street, next door)"),
+    ("1447 Harborview Blvd", "447 Harborview Blvd", "house number truncated (1447 -> 447)"),
+    ("616 Kingsmere Ave", "99999 Other Rd", "house numbers unrelated"),
+    ("616 Kingsmere Ave", "Kingsmere Ave", "no house number on one side"),
+    ("616 Kingsmere Ave", "", "missing address on one side"),
 ])
 def test_number_patterns(qa, ca, want):
     assert _pattern("Apex Digital", qa, "Apex Digital", ca) == want
