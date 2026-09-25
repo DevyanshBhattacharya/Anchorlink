@@ -40,7 +40,8 @@ class RecordView:
     __slots__ = ("name", "addr", "core", "core_toks", "name_toks", "addr_toks",
                  "addr_w", "addr_W", "core_w", "core_W", "name_grams", "skel",
                  "skel_grams", "addr_grams", "nums", "nums_i", "aliases",
-                 "native", "domain", "freq_pct", "has_addr")
+                 "native", "domain", "freq_pct", "has_addr",
+                 "name_w", "name_W", "addr_tail", "pins", "addr_skel_grams")
 
     def __init__(self, name: str, addr: str, country: str, roles: TokenRoles):
         self.name = clean_text(name)
@@ -53,6 +54,11 @@ class RecordView:
         self.addr_W = float(sum(self.addr_w.values()))
         self.core_w = {t: roles.weight(t, country) for t in set(self.core_toks)}
         self.core_W = float(sum(self.core_w.values()))
+        # IDF over the **full** token set as well as the core: the core drops
+        # exactly the tokens the dataset's hard negatives are built from, so a
+        # rarity signal computed on it cannot see them
+        self.name_w = {t: roles.weight(t, country) for t in set(self.name_toks)}
+        self.name_W = float(sum(self.name_w.values()))
         self.name_grams = char_ngrams(self.core.replace(" ", ""))
         # The skeleton is built from the **full** name, not the core.  Its job is
         # to bridge scripts, and affix stripping is asymmetric across a
@@ -63,6 +69,19 @@ class RecordView:
         self.skel = skeleton(self.name).replace(" ", "")
         self.skel_grams = char_ngrams(self.skel)
         self.addr_grams = char_ngrams(self.addr.replace(" ", ""))
+        # the consonant skeleton of the address, for the same cross-script reason
+        # the name has one: a Devanagari address shares no token with its
+        # romanised twin, so every other address feature reads as a conflict
+        self.addr_skel_grams = char_ngrams(skeleton(addr).replace(" ", ""))
+        # The administrative tail: the trailing non-numeric tokens, which are the
+        # city / state / region in every country in this dataset.  Kept as a set
+        # of the last three, and always compared against the *whole* other
+        # address as well, because these fields get reordered
+        # ("OH, Columbus, 5559 Kingsmere Avenue").
+        self.addr_tail = set([t for t in self.addr_toks[-4:] if not t.isdigit()][-3:])
+        #: 5-6 digit numeric tokens — ZIP (US, France) and PIN (India) alike, by
+        #: length only, so no country is named.
+        self.pins = {t for t in self.addr_toks if t.isdigit() and 5 <= len(t) <= 6}
         self.nums = house_numbers(addr)
         self.nums_i = sorted(int(n[:9]) for n in self.nums) if self.nums else []
         self.aliases = name_aliases(name)
@@ -183,6 +202,11 @@ PAIR_FEATURES: Tuple[str, ...] = (
     "addr_gram_jac", "addr_me", "addr_len_ratio", "locality_conflict",
     # numbers
     "num_rel", "num_min_diff", "num_shared", "num_unmatched_1", "num_unmatched_2",
+    # cross-field, rarity and administrative signals (v3)
+    "xf_n1_a2", "xf_n2_a1",
+    "name_idf_jac", "name_rare_shared", "name_skel_lev",
+    "adm_tail_jac", "adm_tail_cov", "adm_pin_match",
+    "addr_skel_jac", "addr_rare_shared",
     # retrieval (one score/rank pair per retriever, then the fusion columns)
     "r_na_score", "r_na_rank", "r_nm_score", "r_nm_rank",
     "r_ad_score", "r_ad_rank", "r_sk_score", "r_sk_rank",
@@ -191,18 +215,25 @@ PAIR_FEATURES: Tuple[str, ...] = (
     "x_support_name", "x_support_addr", "x_rrf_rank", "x_rrf_gap", "x_n_cands",
 )
 N_PAIR = len(PAIR_FEATURES)
-N_PAIRWISE_ONLY = 35          # columns pair_feature_row fills
-I_RETRIEVAL = 35              # retrieval columns come from the candidate table
-I_SET = 47                    # set columns come from the candidate list
+N_PAIRWISE_ONLY = 45          # columns pair_feature_row fills
+I_RETRIEVAL = 45              # retrieval columns come from the candidate table
+I_SET = 57                    # set columns come from the candidate list
 
 #: Bumped whenever the feature set changes, so cached shards from an older
 #: definition are never silently mixed with new ones.
-FEATURE_VERSION = 2
+FEATURE_VERSION = 3
 
 #: Added by the meta stage once stage-1 probabilities exist.
+#:
+#: The second row is v3.  All six describe the *shape* of one candidate list
+#: rather than one pair in it, which is the context M2 needs in order not to
+#: punish a true match for having close company: a steep drop to the runner-up
+#: means a confident list, a flat one means duplicates or a chain, and the
+#: probability sum is the list's own estimate of how many matches it holds.
 META_FEATURES: Tuple[str, ...] = (
     "m_prob", "m_rank", "m_gap_to_best", "m_score_share", "m_n_strong",
     "m_excl_prob", "m_excl_rank", "m_n_competitors", "m_best_other_source",
+    "m_cliff", "m_gap_rel", "m_std", "m_psum", "m_rank_src", "m_excl_loss",
 )
 
 DEEP_FEATURES: Tuple[str, ...] = ("ce_logit", "llm_logit")
@@ -219,11 +250,16 @@ _MONO: Dict[str, int] = {
     "addr_contain": 1, "addr_unmatched_1": -1, "addr_unmatched_2": -1,
     "addr_gram_jac": 1, "addr_me": 1, "locality_conflict": -1,
     "num_shared": 1, "num_min_diff": -1,
+    "xf_n1_a2": 1, "xf_n2_a1": 1,
+    "name_idf_jac": 1, "name_rare_shared": 1, "name_skel_lev": 1,
+    "adm_tail_jac": 1, "adm_tail_cov": 1, "adm_pin_match": 1,
+    "addr_skel_jac": 1, "addr_rare_shared": 1,
     "r_na_score": 1, "r_nm_score": 1, "r_ad_score": 1, "r_sk_score": 1,
     "r_na_rank": -1, "r_nm_rank": -1, "r_ad_rank": -1, "r_sk_rank": -1,
     "r_rrf": 1, "r_nret": 1, "r_pre": 1,
     "x_support_name": 1, "x_support_addr": 1, "x_rrf_gap": -1,
     "m_prob": 1, "m_excl_prob": 1, "m_gap_to_best": -1, "m_best_other_source": 0,
+    "m_gap_rel": -1, "m_rank_src": -1, "m_excl_loss": -1,
     "ce_logit": 1, "llm_logit": 1,
 }
 
@@ -331,6 +367,85 @@ def pair_feature_row(v1: RecordView, v2: RecordView, roles: TokenRoles,
     else:
         out[31] = out[32] = out[33] = out[34] = NAN
 
+    # -- cross-field: the name written into the address field, or the reverse
+    #
+    # A recurring shape in this data is a record whose name is <unknown> or a
+    # fragment while the business name sits inside the address line, and the
+    # mirror image of it.  Every name feature above compares name to name and
+    # every address feature compares address to address, so neither can see it:
+    # the pair reads as two conflicts instead of one match.  Measured on a true
+    # pair from the training data, S1 "<W1> <W2> <W3> Private Limited" at
+    # "<W4>-19-22, ... <W2>" against a candidate named "<W10>" addressed
+    # "<W2>, <W4>-19-2, ...", the only shared evidence is the S1 *name* token
+    # <W2> appearing in the candidate's *address*.
+    out[35] = _mass_in(v1.name_w, v1.name_W, v2.addr_toks)
+    out[36] = _mass_in(v2.name_w, v2.name_W, v1.addr_toks)
+
+    # -- rarity: a match on "Zebulon" is not a match on "Enterprises"
+    #
+    # The existing IDF features are containment and unmatched *mass* over the
+    # core name, which answers "how much weight is shared".  These two answer
+    # the different question "was anything *rare* shared", which is what decides
+    # a pair whose address is missing: one rare token in common is enough, and a
+    # dozen common ones are not.  Both are normalised by the country's maximum
+    # IDF so they mean the same thing in a country the model never saw.
+    inter_full = t1 & t2
+    union_full = t1 | t2
+    if union_full:
+        wu = sum(max(v1.name_w.get(t, 0.0), v2.name_w.get(t, 0.0)) for t in union_full)
+        wi = sum(max(v1.name_w.get(t, 0.0), v2.name_w.get(t, 0.0)) for t in inter_full)
+        out[37] = wi / wu if wu > 0 else NAN
+    else:
+        out[37] = NAN
+    max_idf = roles.max_name_idf(country)
+    rare = [v1.name_w.get(t, 0.0) for t in inter_full
+            if t not in af1 and t not in af2]
+    out[38] = (max(rare) / max_idf) if rare and max_idf > 0 else 0.0
+
+    # Edit distance on the consonant skeleton, not just 3-gram Jaccard on it.
+    # Grams are order-free, so a fully transposed spelling scores the same as a
+    # near-identical one; the edit distance separates them, and the skeleton is
+    # where a mangled transliteration still lines up.
+    out[39] = (Levenshtein.normalized_similarity(v1.skel, v2.skel)
+               if v1.skel and v2.skel else NAN)
+
+    # -- administrative geography, manufactured from the address tail
+    #
+    # No geocoding is allowed, so the region has to come out of the string.  The
+    # trailing non-numeric tokens are the city/state/region in every country
+    # here, and a 5-6 digit token is the ZIP or PIN by length alone.  Given the
+    # region agrees, the model is free to forgive a mangled street; given the
+    # PIN conflicts, it is free not to.
+    if v1.has_addr and v2.has_addr:
+        out[40] = jaccard(v1.addr_tail, v2.addr_tail)
+        # ...and the same tokens against the *whole* other address, because these
+        # fields get reordered and then a tail-to-tail test compares a street
+        # against a city
+        a2, a1 = set(v2.addr_toks), set(v1.addr_toks)
+        cov = []
+        if v1.addr_tail:
+            cov.append(len(v1.addr_tail & a2) / len(v1.addr_tail))
+        if v2.addr_tail:
+            cov.append(len(v2.addr_tail & a1) / len(v2.addr_tail))
+        out[41] = float(np.mean(cov)) if cov else NAN
+        out[42] = (float(bool(v1.pins & v2.pins)) if (v1.pins and v2.pins) else NAN)
+        out[43] = jaccard(v1.addr_skel_grams, v2.addr_skel_grams)
+        shared_a = set(v1.addr_w) & set(v2.addr_w)
+        amax = roles.max_addr_idf(country)
+        ar = [v1.addr_w[t] for t in shared_a if not t.isdigit()]
+        out[44] = (max(ar) / amax) if ar and amax > 0 else 0.0
+    else:
+        out[40] = out[41] = out[42] = out[43] = NAN
+        out[44] = NAN
+
+
+def _mass_in(w: Dict[str, float], total: float, other: Sequence[str]) -> float:
+    """Share of ``w``'s IDF mass whose tokens appear in ``other``."""
+    if total <= 0 or not other:
+        return NAN
+    o = set(other)
+    return sum(v for t, v in w.items() if t in o) / total
+
 
 def support_similarity(v1: RecordView, v2: RecordView) -> Tuple[float, float]:
     """Cheap agreement between two *candidate* records (one S2, one S3).
@@ -429,4 +544,58 @@ def build_meta_features(s1_codes: np.ndarray, cand_codes: np.ndarray,
     out[:, 6] = claim_rank
     out[:, 7] = n_comp
     out[:, 8] = best_other_source(bounds, prob, src)
+
+    # ---- v3: the shape of the list, not the pair -------------------------
+    # A crowded list is not evidence against the candidate at the top of it.
+    # Without these columns M2 sees "this candidate has eight close
+    # competitors" and cannot tell a genuine ambiguity from a chain of
+    # identically named branches, where the top candidate is still right.
+    second = second_within_groups(bounds, prob)
+    denom = np.maximum(best, 1e-9)
+    out[:, 9] = (best - second) / denom              # the step-drop to the runner-up
+    out[:, 10] = (best - prob) / denom               # this row's gap, relative
+    out[:, 11] = std_within_groups(bounds, prob)     # how spread the list is
+    out[:, 12] = total                               # the list's own cluster-size estimate
+    out[:, 13] = rank_within_source(bounds, prob, src)
+    # exclusivity is a correction, and how much of it a row absorbed is itself a
+    # signal: a claim that lost most of its probability to a rival is different
+    # from one that was never contested
+    out[:, 14] = prob - excl
+    return out
+
+
+def second_within_groups(bounds: np.ndarray, score: np.ndarray) -> np.ndarray:
+    """Per-row copy of its group's second-highest score (0 if the group has one)."""
+    out = np.zeros(len(score), dtype=np.float64)
+    for a, b in zip(bounds[:-1], bounds[1:]):
+        if b - a >= 2:
+            seg = score[a:b]
+            out[a:b] = float(np.partition(seg, -2)[-2])
+    return out
+
+
+def std_within_groups(bounds: np.ndarray, score: np.ndarray) -> np.ndarray:
+    out = np.zeros(len(score), dtype=np.float64)
+    for a, b in zip(bounds[:-1], bounds[1:]):
+        if b > a:
+            out[a:b] = float(score[a:b].std())
+    return out
+
+
+def rank_within_source(bounds: np.ndarray, score: np.ndarray,
+                       src: np.ndarray) -> np.ndarray:
+    """0-based rank inside this S1's candidates **from the same source**.
+
+    The metric counts S2 and S3 records separately, so a candidate's real
+    competition is the other candidates from its own source; ``m_rank`` mixes
+    the two and reads a strong S2 match as competition for an S3 one.
+    """
+    out = np.zeros(len(score), dtype=np.float64)
+    for a, b in zip(bounds[:-1], bounds[1:]):
+        seg_s, seg_src = score[a:b], src[a:b]
+        for s in (2, 3):
+            m = np.flatnonzero(seg_src == s)
+            if len(m):
+                order = m[np.argsort(-seg_s[m], kind="stable")]
+                out[a + order] = np.arange(len(order), dtype=np.float64)
     return out

@@ -28,6 +28,7 @@ from .normalize import TokenRoles
 from .retrieval import BlockingConfig, RETRIEVAL_COLUMNS, cand_dir
 
 RRF_COL = RETRIEVAL_COLUMNS.index("rrf")
+PRE_COL = RETRIEVAL_COLUMNS.index("pre")
 
 _WORKER: Dict[str, object] = {}
 
@@ -64,17 +65,25 @@ def compute_block(block: Block, roles: TokenRoles) -> np.ndarray:
     # set-level columns: support against the top candidate of the other source,
     # plus the shape of this S1's candidate list
     rrf = block.retr[:, RRF_COL]
+    # Which other-source candidate to take support from is a ranking question,
+    # and the pre-ranker is a model trained to answer it while RRF is an
+    # unweighted rank sum.  Use `pre` when it exists (it does on a pruned table,
+    # which is what the matcher scores) and fall back to RRF otherwise, so the
+    # raw table still featurises.
+    pre = block.retr[:, PRE_COL]
+    anchor = pre if np.isfinite(pre).any() else rrf
     src = block.src
     for a, b in zip(block.bounds[:-1], block.bounds[1:]):
         if b <= a:
             continue
         seg = slice(a, b)
         seg_rrf, seg_src = rrf[seg], src[seg]
+        seg_anchor = anchor[seg]
         top = {}
         for s in (2, 3):
             m = seg_src == s
             if m.any():
-                top[s] = int(np.flatnonzero(m)[np.argmax(seg_rrf[m])]) + a
+                top[s] = int(np.flatnonzero(m)[np.argmax(seg_anchor[m])]) + a
         order = np.argsort(-seg_rrf, kind="stable")
         ranks = np.empty(b - a, dtype=np.float32)
         ranks[order] = np.arange(b - a, dtype=np.float32)

@@ -36,6 +36,53 @@ Normalise ──▶ Retrieve ──▶ Pre-rank ──▶ Score ──▶ Decide
 Everything runs **per country partition**, keyed on the exact country string. France
 appears only in the test set and needs no code change — it simply gets its own partition.
 
+### Where each step lives
+
+| step | module | what it produces |
+| --- | --- | --- |
+| load the TSVs safely, cache as parquet | `io_utils.py`, `data.py` | `work/cache/*.parquet` |
+| corpus statistics per country | `corpus.py`, `normalize.py` | IDF, affixes, name frequencies |
+| folds and splits | `splits.py` | name families, 5 disjoint roles |
+| the four sparse indexes | `blocking.py` | `work/index/*.pkl` |
+| key blocks | `keys.py` | capped hash → row-id blocks |
+| retrieve + fuse | `retrieval.py` | raw candidate table |
+| prune to the final list | `preranker.py` | `candidate_pairs.tsv` set |
+| pair features | `features.py`, `featurize.py` | `work/features/X-*.npy` |
+| labels | `labels.py` | y, from ground truth |
+| the models | `model.py`, `train.py` | M1, M2, calibrator |
+| the decision | `decide.py`, `pipeline.py` | the emitted subsets |
+| scoring the test set | `infer.py` | probabilities, streamed |
+| write the TSVs | `io_utils.py`, `run.py` | `output/*.tsv` |
+| metrics, ablations, errors | `scoring.py`, `analyze.py`, `final_report.py` | `results/BENCHMARK.md` |
+| GPU phases | `dense*.py`, `cross_encoder.py`, `phase1.py`, `phase1_run.py`, `phase2_run.py` | not in the current score |
+| licence allow-list, device choice | `device.py` | refuses a disallowed model at load time |
+| masking records before publishing | `redact.py`, `report.py` | `results/` carries no challenge data |
+
+---
+
+## 0. Reading the data without corrupting it
+
+Two traps here cost real score, and both are one line of code.
+
+**`NA` is a business name.** So are `NaN`, `None`, `NULL` and `inf`. pandas turns all of
+them into missing values by default. Every read in this codebase goes through one keyword
+set:
+
+```python
+sep="\t", dtype=str, quoting=csv.QUOTE_NONE, keep_default_na=False, na_filter=False
+```
+
+`QUOTE_NONE` matters too: addresses contain quote characters, and the default parser eats
+them.
+
+**`csv.writer` emits CRLF.** That glues a `\r` onto the last id of every row. The
+validator's prefix check still passes, so nothing complains — and the scorer silently
+loses that match. Every write uses `open(..., newline="\n")` and plain string formatting.
+
+The seven TSVs are converted once to parquet, with entity ids stored as **int32** — the
+numeric part of `S2-166376419` — because five million ids cost 20 MB as int32 and about
+300 MB as Python strings.
+
 ---
 
 ## 1. Normalisation — learn the language, don't hard-code it
@@ -96,9 +143,15 @@ corrupted by the name view; a Devanagari name by the skeleton. Name-only retriev
 weak on its own — 35–44% of S1 names are shared by another business, so a name is not an
 identifier — yet it still adds 5 points of full-cluster recall to the union.
 
-Ranks are fused with reciprocal-rank fusion, and capped deterministic key blocks
-(house number + name root) are unioned in for records whose text is corrupted but whose
-number and root survive.
+Ranks are fused with **reciprocal-rank fusion** (`1/(60 + rank)`, summed across
+retrievers), which needs no score calibration between indexes that are not comparable.
+
+**Key blocks** are unioned in on top: two exact keys per record — *(house number, name
+root)* and *(sorted core-name skeleton)* — each capped at 50 records, because a key that
+matches 5,000 records carries no information. They catch the case ranked retrieval misses
+entirely: text corrupted past recognition (`Apex Digital` → `Apex Didt1`) while the number
+and the name root survive. Keys are stored as sorted int64 hash arrays rather than a dict:
+2.3M keys cost 18 MB that way and ~300 MB as a Python dict.
 
 Two engineering details make this survive full scale:
 
@@ -156,6 +209,22 @@ reported per side and the model decides what it costs.
 
 Missing fields are never imputed — they become NaN plus a flag, and LightGBM routes NaN
 natively.
+
+### The 52 columns, by group
+
+| # | group | what is in it |
+| --- | --- | --- |
+| 1–15 | **name similarity** | Jaro–Winkler, normalised Levenshtein, token-sort and token-set ratios on *core* names; character 3-gram Jaccard on the folded and skeleton views; IDF-weighted Monge–Elkan both directions with a soft abbreviation test as inner similarity; Soft TF-IDF; IDF containment and unmatched weight per side; name-frequency percentile; best similarity over DBA / pipe / domain aliases; length ratio |
+| 16–20 | **name tokens** | affix relation class, unweighted token Jaccard, one-sided non-affix token counts, token-set equality |
+| 21–22 | **flags** | domain-style name, native script per side |
+| 23–30 | **address** | missing flags; IDF-weighted **containment** with unmatched weight per side; character 3-gram Jaccard; Monge–Elkan over alphabetic tokens with abbreviation handling; token-count ratio; locality conflict (rare alphabetic tokens on one side only) |
+| 31–35 | **house numbers** | relation class, `log(1+min|Δ|)`, shared count, unmatched share per side |
+| 36–47 | **retrieval** | each retriever's score and rank, key-hit flag, RRF, how many retrievers agreed, the pre-ranker probability |
+| 48–52 | **candidate list** | agreement with this S1's best candidate from the *other* source (name and address), rank and gap within the list by RRF, list size |
+| +9 | **meta, added by M2** | M1's probability, rank, gap to best, score share, count of strong candidates, exclusivity-corrected probability, claim rank, competitor count, best score from the other source |
+
+An abbreviation counts as a partial match (0.8), never equality — the test that fires on
+`rd`~`road` and `bd`~`boulevard` also fires on `rd`~`reed`.
 
 ### The feature the error analysis forced
 
@@ -257,6 +326,80 @@ share of every test-only country going to LOCO — 0.4675 India / 0.3827 US / 0.
 
 ---
 
+## 7. Making 290 million pairs fit in 16 GB
+
+The pipeline generates **289M candidate pairs** and computes 52 features for 85M of them.
+Nothing here is exotic; it is just a set of choices that each keep one array off the heap.
+
+| problem | what we do |
+| --- | --- |
+| 22M records as Python strings | store ids as int32, keep text in parquet, load one partition at a time |
+| an exact name → count table costs GBs | a 2²⁴-slot uint16 hash counter per country, 33 MB; collisions only inflate a rare name slightly, which is harmless for a log-scaled rarity feature |
+| IDF vocabulary has a long hapax tail | drop tokens with df < 2 — a token seen once has idf = log(N), which is *exactly* the fallback for an unseen token, so pruning is lossless and removes ~60% of the vocabulary |
+| feature matrix for a country is tens of GB | shard it (`X-*.npy` + `K-*.parquet`), filter **per shard** before stacking |
+| scoring needs the whole table twice | three streaming passes: M1 per shard keeping only the probability, meta over the country at once, M2 per shard again |
+| the writer held ~4 GB of strings | carry candidates as `(int32, int8, int32, bool)` arrays and format ids only as each line is written |
+| a stage dies half-way | every stage caches under a fingerprint of its configuration **and** of the query set, so a rerun resumes instead of restarting |
+
+Two hot spots were rewritten after measuring, not guessing:
+
+* **The decision rule** was O(n³) per entity. Substituting `s = a + b` turns the inner
+  double sum into one convolution, and the Poisson-binomial ladders are built
+  incrementally — **3.1× faster**, and exact (agreement 7×10⁻¹⁶ over 400 random instances,
+  pinned by a test).
+* **The candidate-text lookup** did one `np.searchsorted` per candidate. Batched per
+  source, it is now one call per block.
+
+And one finding that mattered more than all of them: **never load two OpenMP runtimes into
+one process.** LightGBM, PyTorch, scikit-learn and `sparse_dot_topn` each ship their own
+`libomp`. With two resident, the sparse top-k product silently falls back to a single
+thread — a measured **25× slowdown**, which turned a 1.6-hour blocking pass into a
+projected 16 hours — and in the worst case it deadlocks or segfaults. `ber.cli all` runs
+*all* retrieval before anything touches a model, LightGBM is imported lazily, and
+`check_openmp_health()` warns if the ordering is ever undone.
+
+---
+
+## 8. The GPU phases — built, measured, not yet in the score
+
+All three are implemented and unit-tested. None is in the current score, and the reason is
+arithmetic: the cross-encoder runs at **31.6 pairs/s** on this laptop's GPU, which is
+17.6 days for the test candidate set.
+
+**Phase 1 — dense bi-encoder** (`dense.py`, `dense_train.py`). BGE-M3 (568M, MIT), trained
+with **supervised contrastive loss**, not InfoNCE: clusters here hold 3–6 records, so
+InfoNCE would treat a record's own siblings as negatives. Batches are packed with clusters
+the *sparse blocker already confuses*, so the hardest negatives arrive as in-batch
+negatives at no extra encoding cost, and no batch mixes countries. Mined negatives scoring
+above 95% of the anchor's weakest positive are dropped, which guards against label noise.
+Each record is serialised with a fixed field order, an extracted `nums:` field so house
+numbers are short adjacent tokens rather than digits buried in an address, and a romanised
+echo for native scripts. Proven on MPS: dense pair recall **0.952 → 0.978** after training.
+
+**Phase 2 — cross-encoder** (`cross_encoder.py`). `bge-reranker-v2-m3` (568M, Apache-2.0),
+on the same XLM-R backbone, so it reads Devanagari and Malayalam — English-only
+DeBERTa-v3-large is excluded for exactly that reason. It trains on *our own blocker's*
+candidates, so the training distribution matches inference, plus two augmentations: copy a
+positive, shift its house number by 3–20 and flip the label (the dominant hard-negative
+pattern), and label-preserving noise. Its logit becomes one more column of M2.
+
+**Phase 3 — LLM judge.** `Qwen3-Reranker-4B` (Apache-2.0) on the uncertain band only,
+scored through yes/no token logits with no generation.
+
+**The licence rule is enforced in code, not in a comment.** `device.py` holds an
+allow-list and refuses anything else *at load time*, so a wrong model id fails loudly
+rather than quietly reaching a submission. Explicitly refused: Llama and Gemma on licence;
+Qwen3-8B (8.2B) and Qwen3-Reranker-8B (8.19B) on the 8B cap; SPLADE (CC BY-NC-SA) and
+deepparse (LGPL, and pretrained on external addresses) on both. The device is picked
+automatically — CUDA, then Apple MPS, then CPU — and every phase has a preset sized for
+each.
+
+Each phase is kept **only if it beats the current best on validation**, and the
+leave-one-country-out fold is the one that decides, because it is the France proxy.
+`./aws_phases.sh` runs the sequence at 24 GB-GPU config.
+
+---
+
 ## Where the score actually comes from
 
 | country | macro F₀.₅ | precision | recall | singleton accuracy |
@@ -282,6 +425,75 @@ By cluster size:
 
 Single-match entities are the hardest: there is exactly one right answer and no supporting
 evidence from a sibling record.
+
+---
+
+## Appendix — the actual configuration
+
+Every number below is the value in the code, not a description of it. Config id:
+`b3_k30_u80_df1_qb60k_key20_pr60`, feature set version 2.
+
+### Retrieval
+
+| retriever | view | tokens | n-gram | df cap (abs / frac) | min df |
+| --- | --- | --- | --- | --- | --- |
+| `na` | folded name + address | word + char | 4 | 20,000 / 2% | 2 |
+| `nm` | folded name | word + char | 4 | 20,000 / 2% | 2 |
+| `ad` | folded address | word + char | 4 | 20,000 / 2% | 2 |
+| `sk` | consonant skeleton of name + address | char | 3 | 200,000 / 3% | 2 |
+
+The skeleton's cap is ten times larger on purpose: that view has only ~11k possible
+3-grams, and applying the word-view cap to it collapsed its pair recall from 0.829 to
+0.590.
+
+| knob | value |
+| --- | --- |
+| top-k per retriever, per source | 30 |
+| union cap per source | 80 |
+| RRF constant *k* | 60 |
+| query budget (postings visited) | 60,000 |
+| max query terms | 96 |
+| key blocks per query / cap per key | 20 / 50 |
+
+### Pre-ranker
+
+LightGBM on the **11 retrieval columns only** — each retriever's score and rank, key-hit,
+RRF, retriever-agreement count. `learning_rate 0.08`, `num_leaves 63`,
+`min_data_in_leaf 500`, monotone constraints on.
+
+Pruning: keep everything with `p ≥ 0.002`, never fewer than **15**, never more than **60**
+per S1. That lands at ~32 candidates per entity.
+
+### Matcher (M1 and M2)
+
+```
+objective binary          learning_rate 0.05        num_leaves 127
+min_data_in_leaf 200      feature_fraction 0.8      bagging_fraction 0.8 (freq 1)
+lambda_l2 1.0             monotone_constraints_method "advanced"
+early stopping 100 rounds on a 15% holdout taken by whole S1 groups
+```
+
+M1 sees 52 columns, M2 sees those 52 plus 9 meta columns. Objective is **log-loss, never
+LambdaRank** — the decision layer needs probabilities, not an ordering.
+
+### Decision
+
+β² = 0.25. The rule search sweeps thresholds `0.30 … 0.95` step 0.025 and expected-F
+temperatures `{0.6, 0.8, 1.0, 1.25, 1.6}`, and takes whichever scores best on the
+test-mix-weighted validation. Our run chose the **expected-F rule at T = 0.6–0.8**, not a
+threshold.
+
+### Training sizes, per country
+
+| role | fold | S1 entities |
+| --- | --- | --- |
+| M1 | 1, 2 | 120,000 |
+| pre-ranker | 3 | 50,000 |
+| M2 | 4a | ~50,000 |
+| calibration | 4b | ~30,000 |
+| validation | 0 | 120,000 |
+
+Sampled by **whole name family**, so a family never straddles two roles.
 
 ---
 

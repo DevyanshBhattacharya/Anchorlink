@@ -273,3 +273,112 @@ def test_group_helpers():
     bo = best_other_source(b, s, src)
     assert bo[0] == pytest.approx(0.9)       # row 0 is S2, best S3 in group is 0.9
     assert bo[1] == pytest.approx(0.1)
+
+
+# --------------------------------------------------------------- v3 features
+def test_name_written_into_the_address_field_is_visible(roles):
+    """The cross-field columns are the only ones that can see this pair.
+
+    A recurring shape in the data: the candidate's name is a fragment while the
+    business name sits in its address line.  Name-to-name and address-to-address
+    comparisons both read a conflict; the cross-field mass is what carries the
+    evidence.
+    """
+    f = feats(roles, "apex beta digital llc", "1795 westchester drive high point nc",
+              "unknown", "apex beta digital 1795 westchester drive high point nc")
+    assert f["xf_n1_a2"] > 0.5, "S1's name mass should be found in the candidate address"
+    assert f["name_jw"] < 0.7, "the names themselves do not match"
+
+
+def test_cross_field_is_nan_when_the_other_side_has_no_address(roles):
+    f = feats(roles, "apex beta digital llc", "1795 westchester drive high point nc",
+              "apex beta digital llc", "")
+    assert math.isnan(f["xf_n1_a2"])
+
+
+def test_rare_shared_token_outranks_a_common_one(roles):
+    """A match on a rare word is worth more than a match on a frequent one.
+
+    Both pairs below share exactly one non-affix token and differ in the other, so
+    every unweighted overlap feature is identical; only the rarity column moves.
+    """
+    common = feats(roles, "apex digital llc", "x", "beta digital llc", "x")
+    rare = feats(roles, "apex digital llc", "x", "apex gamma llc", "x")
+    assert rare["name_rare_shared"] > common["name_rare_shared"]
+    assert 0.0 <= common["name_rare_shared"] <= 1.0
+    assert 0.0 <= rare["name_rare_shared"] <= 1.0
+
+
+def test_skeleton_edit_distance_separates_a_transposition(roles):
+    """Gram Jaccard is order-free, so it cannot; the edit distance can."""
+    same = feats(roles, "telecommunication", "x", "tetlecommunication", "x")
+    shuffled = feats(roles, "telecommunication", "x", "communicationtele", "x")
+    assert same["name_skel_lev"] > shuffled["name_skel_lev"]
+
+
+def test_administrative_tail_forgives_a_mangled_street(roles):
+    """Same city and state, unrecognisable street: the tail is the only agreement."""
+    f = feats(roles, "apex beta digital llc", "1795 westchester drive high point nc",
+              "apex beta digital llc", "1795 wstchstr dr high point nc")
+    assert f["adm_tail_jac"] > 0.5
+    assert f["adm_tail_cov"] > 0.5
+
+
+def test_administrative_tail_survives_a_reordered_address(roles):
+    """``adm_tail_cov`` compares against the whole other address, so a rotated
+    field ("NC, High Point, 1795 Westchester Drive") still agrees where the
+    strict tail-to-tail Jaccard does not."""
+    f = feats(roles, "apex beta digital llc", "1795 westchester drive high point nc",
+              "apex beta digital llc", "nc high point 1795 westchester drive")
+    assert f["adm_tail_cov"] == pytest.approx(1.0)
+
+
+def test_pin_match_is_three_valued(roles):
+    hit = feats(roles, "apex llc", "12 mg road kochi 682024",
+                "apex llc", "12 mg road kochi 682024", country="India")
+    miss = feats(roles, "apex llc", "12 mg road kochi 682024",
+                 "apex llc", "12 mg road kochi 560001", country="India")
+    absent = feats(roles, "apex llc", "12 mg road kochi",
+                   "apex llc", "12 mg road kochi", country="India")
+    assert hit["adm_pin_match"] == 1.0
+    assert miss["adm_pin_match"] == 0.0
+    assert math.isnan(absent["adm_pin_match"]), "no PIN is not a conflict"
+
+
+def test_address_skeleton_bridges_a_native_script_address(roles):
+    """Devanagari and its romanisation share no token, so every other address
+    feature reads a conflict.  The address skeleton is the bridge, exactly as the
+    name skeleton is for names."""
+    f = feats(roles, "apex traders limited", "कोरमंगला",
+              "apex traders ltd", "koramangala", country="India")
+    assert f["addr_skel_jac"] > 0.0
+
+
+def test_v3_meta_columns_describe_the_list(roles):
+    s1 = np.array([0, 0, 0, 1, 1])
+    cand = np.array([10, 11, 12, 10, 13])
+    src = np.array([2, 3, 2, 2, 3], dtype=np.int8)
+    p = np.array([0.9, 0.4, 0.2, 0.6, 0.8])
+    cols = dict(zip(META_FEATURES, build_meta_features(s1, cand, src, p).T))
+    # entity 0: best 0.9, runner-up 0.4 -> a steep cliff, shared by every row
+    assert cols["m_cliff"][0] == pytest.approx((0.9 - 0.4) / 0.9)
+    assert cols["m_cliff"][1] == cols["m_cliff"][0]
+    assert cols["m_gap_rel"][0] == pytest.approx(0.0)
+    assert cols["m_psum"][0] == pytest.approx(1.5)
+    assert cols["m_std"][0] == pytest.approx(np.std([0.9, 0.4, 0.2]))
+    # rank inside the row's own source: entity 0 has S2 = {0.9, 0.2}, S3 = {0.4}
+    assert list(cols["m_rank_src"][:3]) == [0, 0, 1]
+    # candidate 10 is contested, candidate 13 is not
+    assert cols["m_excl_loss"][0] > 0.0
+    assert cols["m_excl_loss"][4] == pytest.approx(0.0, abs=1e-9)
+
+
+def test_new_columns_all_have_a_monotone_opinion():
+    """A similarity that is allowed to cut both ways will not transfer to a
+    country the model never saw, so each new column declares a direction."""
+    from ber.features import monotone_vector
+    mono = dict(zip(PAIR_FEATURES, monotone_vector(PAIR_FEATURES)))
+    for f in ("xf_n1_a2", "xf_n2_a1", "name_idf_jac", "name_rare_shared",
+              "name_skel_lev", "adm_tail_jac", "adm_tail_cov", "adm_pin_match",
+              "addr_skel_jac", "addr_rare_shared"):
+        assert mono[f] == 1, f

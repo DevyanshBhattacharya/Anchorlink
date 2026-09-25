@@ -115,6 +115,32 @@ def test_fingerprint_changes_with_every_knob():
         seen.add(fp)
 
 
+def test_pruning_knobs_move_the_pruned_path_but_not_the_raw_one(tmp_path, monkeypatch):
+    """The raw union does not depend on how it is later pruned.
+
+    Re-running an hour of retrieval because ``prerank_eps`` changed is pure
+    waste, and reusing a shard built with a *different* eps under the same name
+    is a bug.  Both are decided here.
+    """
+    from ber import config, retrieval
+
+    monkeypatch.setattr(config, "CAND_DIR", tmp_path)
+    base = BlockingConfig()
+    for kw in (dict(prerank_max=60), dict(prerank_min=8), dict(prerank_eps=0.0005)):
+        other = BlockingConfig(**kw)
+        assert (retrieval.cand_dir("train", "X", other, pruned=False)
+                == retrieval.cand_dir("train", "X", base, pruned=False)), kw
+        assert (retrieval.cand_dir("train", "X", other, pruned=True)
+                != retrieval.cand_dir("train", "X", base, pruned=True)), kw
+    # a retrieval knob moves both
+    other = BlockingConfig(k_per_retriever=25)
+    assert (retrieval.cand_dir("train", "X", other, pruned=False)
+            != retrieval.cand_dir("train", "X", base, pruned=False))
+    # and the key-block cap is part of what the raw union means
+    assert (BlockingConfig(key_block_cap=150).retrieval_fingerprint()
+            != base.retrieval_fingerprint())
+
+
 def test_load_candidates_filters_per_row_group(tmp_path, monkeypatch):
     """The s1 filter must never materialise the whole table first."""
     import pandas as pd
@@ -124,9 +150,9 @@ def test_load_candidates_filters_per_row_group(tmp_path, monkeypatch):
     from ber import config, retrieval
 
     bcfg = BlockingConfig()
-    d = tmp_path / bcfg.fingerprint() / "raw" / "train_Atlantis"
-    d.mkdir(parents=True)
     monkeypatch.setattr(config, "CAND_DIR", tmp_path)
+    d = retrieval.cand_dir("train", "Atlantis", bcfg, pruned=False)
+    d.mkdir(parents=True)
 
     n = 5000
     rows = {"s1": np.repeat(np.arange(n // 10, dtype=np.int32), 10),

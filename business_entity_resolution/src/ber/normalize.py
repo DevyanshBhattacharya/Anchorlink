@@ -327,6 +327,18 @@ class TokenRoles:
     def is_affix(self, w: str, c: str) -> bool:
         return w in self.affix.get(c, ())
 
+    def max_name_idf(self, c: str) -> float:
+        """The country's ceiling on name IDF — what an unseen token is worth.
+
+        Rarity features divide by it so "this pair agreed on a rare word" means
+        the same thing in a country whose corpus is a different size, which is
+        the only way such a feature survives leave-one-country-out.
+        """
+        return float(self.max_idf.get(c, 10.0))
+
+    def max_addr_idf(self, c: str) -> float:
+        return float(self.addr_max_idf.get(c, self.max_idf.get(c, 10.0)))
+
     def core_tokens(self, name: str, c: str) -> List[str]:
         """Name tokens with flagged affixes (and affix bigrams) removed.
 

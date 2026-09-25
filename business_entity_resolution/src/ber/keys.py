@@ -18,7 +18,13 @@ import numpy as np
 
 from .normalize import TokenRoles, house_numbers, skeleton, tokens
 
-MAX_BLOCK = 50          # records per key; larger blocks carry no signal
+#: Records kept per key.  A key matching thousands of records carries no
+#: information — but this cap also *discards* a real entity that happens to share
+#: a building with more than this many businesses, and which rows it discards
+#: used to depend on pool order.  The fix is two-sided: keep a larger block, and
+#: make the per-query truncation prefer the selective keys (see
+#: :meth:`KeyBlocks.lookup`), so a bigger cap adds recall instead of noise.
+MAX_BLOCK = 50
 
 
 def hash64(s: str) -> int:
@@ -80,8 +86,17 @@ class KeyBlocks:
         np.cumsum(counts, out=starts[1:])
         return cls(uniq, rows, starts)
 
-    def lookup(self, key_hashes: Sequence[int]) -> np.ndarray:
-        """Pool row ids hit by any of these keys (may repeat)."""
+    def lookup(self, key_hashes: Sequence[int],
+               by_selectivity: bool = True) -> np.ndarray:
+        """Pool row ids hit by any of these keys, **most selective key first**.
+
+        The caller keeps only the first few hits per query, so the order is not
+        cosmetic: it decides which candidates survive.  Ordering by block size
+        puts the informative hits first — a query that matches a 3-record key and
+        a 140-record key should keep the three, not twenty rows chosen by
+        whichever happened to have the lowest pool index.  Rows may repeat, and
+        the caller must dedupe while preserving this order.
+        """
         if len(self.uniq) == 0 or not len(key_hashes):
             return np.zeros(0, dtype=np.int32)
         kh = np.asarray(key_hashes, dtype=np.int64)
@@ -91,4 +106,7 @@ class KeyBlocks:
         pos = pos[ok]
         if not len(pos):
             return np.zeros(0, dtype=np.int32)
+        if by_selectivity:
+            sizes = self.starts[pos + 1] - self.starts[pos]
+            pos = pos[np.argsort(sizes, kind="stable")]
         return np.concatenate([self.rows[self.starts[p]:self.starts[p + 1]] for p in pos])

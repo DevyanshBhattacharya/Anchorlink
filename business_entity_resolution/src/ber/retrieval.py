@@ -39,7 +39,7 @@ import pyarrow.parquet as pq
 from . import config
 from .blocking import IndexConfig, SparseIndex, make_view
 from .data import Partition, load_partition
-from .keys import KeyBlocks, record_keys
+from .keys import MAX_BLOCK as DEFAULT_KEY_BLOCK_CAP, KeyBlocks, record_keys
 from .normalize import TokenRoles
 
 RRF_K = 60
@@ -83,9 +83,36 @@ class BlockingConfig:
     max_query_terms: int = 96
     rrf_k: int = RRF_K
     #: pre-ranker pruning; 0 disables it (the raw union is then the candidate set)
-    prerank_max: int = 60
+    #:
+    #: ``max`` binds only on a crowded entity — the average list is far shorter
+    #: than it, and ``eps`` is what sets that average — so raising it costs
+    #: candidates on exactly the entities that need them (a mall, a corporate
+    #: park, a chain) and almost nothing elsewhere.
+    prerank_max: int = 120
     prerank_min: int = 15
-    prerank_eps: float = 0.002
+    #: Measured on the cached raw union, held-out fold 0, India (work/reports/
+    #: probe_prune.json).  ``eps`` is the only one of the three that binds:
+    #:
+    #:   max/min/eps      cand/S1   pair recall   ceiling
+    #:   60/15/0.002       29.4      0.9003       0.9595   <- the first full run
+    #:   120/15/0.002      29.4      0.9003       0.9595   <- raising max does nothing
+    #:   120/15/0.001      47.2      0.9090       0.9632
+    #:   120/15/0.0005     81.6      0.9181       0.9672
+    #:   raw union        159.8      0.9282       0.9715
+    #:
+    #: 0.001 buys +0.0037 of ceiling for 1.6x the pairs, which is what the
+    #: per-pair stages of a run cost.  0.0005 buys +0.0077 for 2.8x, and is the
+    #: next step once the matcher is shown to capture this one.
+    prerank_eps: float = 0.001
+    #: records kept per exact key.  A key matching thousands of records carries
+    #: no information, but the old cap of 50 also discarded a real entity that
+    #: happened to share a building with 50 others.
+    key_block_cap: int = DEFAULT_KEY_BLOCK_CAP
+    #: keep the *selective* keys' hits when a query has more than ``k_keys`` of
+    #: them, instead of the lowest pool row ids.  Off by default because it
+    #: changes the raw union, and a cached union must never mean two things — it
+    #: gets its own fingerprint when on.
+    key_select: bool = False
     tag: str = "b3"
 
     def specs(self) -> List[Tuple[str, IndexConfig]]:
@@ -97,11 +124,33 @@ class BlockingConfig:
                               max_query_terms=self.max_query_terms))
                 for tag, cfg in RETRIEVERS]
 
+    def retrieval_fingerprint(self) -> str:
+        """What decides the **raw** union, and nothing else.
+
+        Split out from :meth:`fingerprint` so that changing a pruning threshold
+        does not invalidate the raw candidate cache.  The raw union of one
+        country partition costs an hour of retrieval and five gigabytes on disk;
+        the pruning thresholds are the knobs most worth sweeping, and sweeping
+        them used to mean re-running blocking for no reason.
+        """
+        parts = [f"{self.tag}_k{self.k_per_retriever}_u{self.max_union_per_source}",
+                 f"df{self.df_scale:g}", f"qb{self.query_budget // 1000}k",
+                 f"key{self.k_keys if self.use_keys else 0}"]
+        if self.use_keys and self.key_block_cap != DEFAULT_KEY_BLOCK_CAP:
+            parts.append(f"kb{self.key_block_cap}")
+        if self.use_keys and self.key_select:
+            parts.append("ks")
+        return "_".join(parts)
+
     def fingerprint(self) -> str:
-        return (f"{self.tag}_k{self.k_per_retriever}_u{self.max_union_per_source}"
-                f"_df{self.df_scale:g}_qb{self.query_budget // 1000}k"
-                f"_key{self.k_keys if self.use_keys else 0}"
-                f"_pr{self.prerank_max}")
+        """The raw union **and** the pruning that turns it into the scored set.
+
+        ``prerank_min`` and ``prerank_eps`` belong in here: two configurations
+        that differ only in ``eps`` produce different candidate sets, and before
+        they were in the name one silently reused the other's shards.
+        """
+        return (f"{self.retrieval_fingerprint()}"
+                f"_pr{self.prerank_max}-{self.prerank_min}-{self.prerank_eps:g}")
 
 
 def _schema() -> pa.Schema:
@@ -225,6 +274,18 @@ def fuse(nq: int, per_retriever: Sequence[Tuple[np.ndarray, np.ndarray]],
     return out
 
 
+def _first_unique(rows: np.ndarray, k: int) -> np.ndarray:
+    """First ``k`` distinct values, **in the order given**.
+
+    ``np.unique`` sorts, which would throw away the selectivity ordering
+    :meth:`ber.keys.KeyBlocks.lookup` puts the hits in and truncate by pool index
+    instead — silently keeping the low-numbered records of a huge block over the
+    whole of a tiny one.
+    """
+    _, idx = np.unique(rows, return_index=True)
+    return rows[np.sort(idx)[:k]]
+
+
 def _rank_within(group: np.ndarray, score: np.ndarray) -> np.ndarray:
     """0-based rank of each row inside its (unsorted) group, best score first."""
     order = np.lexsort((-score, group))
@@ -246,8 +307,9 @@ def cand_dir(split: str, country: str, bcfg: BlockingConfig,
     written to ``candidate_pairs.tsv``.
     """
     safe = country.replace("/", "_").replace(" ", "_")
+    fp = bcfg.fingerprint() if pruned else bcfg.retrieval_fingerprint()
     sub = "pruned" if pruned else "raw"
-    return config.CAND_DIR / bcfg.fingerprint() / sub / f"{split}_{safe}"
+    return config.CAND_DIR / fp / sub / f"{split}_{safe}"
 
 
 def _query_stamp(q_ids: np.ndarray | None) -> str:
@@ -302,7 +364,9 @@ def retrieve_partition(split: str, country: str, bcfg: BlockingConfig,
         # resident, and the sparse product then ran at a fraction of its speed.
         pool = load_partition(split, source, country)
         pool_ids = pool.ids.copy()
-        kb = KeyBlocks.build(pool.names, pool.addrs, country, roles) if bcfg.use_keys else None
+        kb = (KeyBlocks.build(pool.names, pool.addrs, country, roles,
+                              max_block=bcfg.key_block_cap)
+              if bcfg.use_keys else None)
         need_build = [cfg for _, cfg in specs
                       if not index_path(split, country, source, cfg, bcfg).exists()]
         for cfg in need_build:
@@ -347,8 +411,9 @@ def retrieve_partition(split: str, country: str, bcfg: BlockingConfig,
             if kb is not None:
                 khits = []
                 for n, a in zip(q_names[lo:hi], q_addrs[lo:hi]):
-                    h = kb.lookup(record_keys(n, a, country, roles))
-                    khits.append(np.unique(h)[:bcfg.k_keys] if len(h) else h)
+                    h = kb.lookup(record_keys(n, a, country, roles),
+                                  by_selectivity=bcfg.key_select)
+                    khits.append(_first_unique(h, bcfg.k_keys) if len(h) else h)
             t = fuse(hi - lo, per, khits, bcfg.max_union_per_source, bcfg.rrf_k)
             if len(t["q"]):
                 data = {"s1": pa.array(q_ids_arr[lo + t["q"]], pa.int32()),

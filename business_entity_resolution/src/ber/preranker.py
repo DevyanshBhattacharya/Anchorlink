@@ -67,14 +67,20 @@ def prune(df: pd.DataFrame, prob: np.ndarray, max_keep: int, min_keep: int,
 
 
 def model_path(bcfg=None) -> Path:
-    """Cache path, keyed by the blocking configuration.
+    """Cache path, keyed by the **retrieval** configuration.
 
     The pre-ranker is trained on one blocking configuration's candidate table and
     is meaningless on another. Keying only on the filename meant a run silently
     reused a pre-ranker fitted to a different retriever set — caught before it
     reached a scored submission, but only just.
+
+    It keys on the retrieval fingerprint rather than the full one because its
+    inputs are the raw union's retrieval columns and its target is the ground
+    truth: neither changes when a pruning threshold does, and this model is what
+    *applies* those thresholds, so refitting it for each one would be circular as
+    well as wasteful.
     """
-    tag = bcfg.fingerprint() if bcfg is not None else "default"
+    tag = bcfg.retrieval_fingerprint() if bcfg is not None else "default"
     return config.MODEL_DIR / f"preranker_{tag}.pkl"
 
 

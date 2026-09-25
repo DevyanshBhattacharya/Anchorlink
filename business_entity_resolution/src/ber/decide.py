@@ -66,15 +66,22 @@ def _suffix_poisson_binomials(q: np.ndarray) -> List[np.ndarray]:
     return out
 
 
-def expected_f05_topk(p: np.ndarray, beta2: float = BETA2,
-                      miss_prob: float = 0.0) -> Tuple[np.ndarray, np.ndarray]:
-    """Return ``(order, ef)`` — the descending order and E[F] for every prefix.
+def expected_f05_components(p: np.ndarray, beta2: float = BETA2
+                           ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return ``(order, u, v)`` — the two halves of E[F] that ``miss_prob`` mixes.
 
-    ``ef[k]`` is the expected per-entity F_0.5 of predicting the top-k
-    candidates.  ``miss_prob`` is the probability that at least one true match
-    never entered the candidate list: it lowers the value of every prediction
-    that would have been complete, so a blocking-lossy segment stops
-    over-predicting the empty set.
+    ``u[k]`` is the expected per-entity F_0.5 of predicting the top-k candidates
+    **given the candidate list is complete**; ``v[k]`` is the same quantity given
+    that exactly one true match never entered the list.  For any miss
+    probability ``m``::
+
+        ef[k] = (1 - m) * u[k] + m * v[k]
+
+    which is what :func:`expected_f05_topk` returns.  Splitting it out matters
+    because ``u`` and ``v`` do not depend on ``m``: a whole sweep over candidate
+    miss probabilities costs **one** pass over the entity instead of one pass per
+    value, and that sweep is the only knob in this layer with real leverage when
+    blocking is lossy.
 
     The naive form sums over (a, b) for every k, which is O(n^3).  Substituting
     ``s = a + b`` turns the inner double sum into a single convolution of
@@ -88,22 +95,59 @@ def expected_f05_topk(p: np.ndarray, beta2: float = BETA2,
     order = np.argsort(-p, kind="stable")
     q = p[order]
     n = len(q)
-    ef = np.empty(n + 1, dtype=np.float64)
+    u = np.empty(n + 1, dtype=np.float64)
+    v = np.empty(n + 1, dtype=np.float64)
     if n == 0:
-        ef[0] = 1.0 - miss_prob
-        return order, ef
+        # nothing to predict: an empty prediction is right iff nothing is missing
+        u[0], v[0] = 1.0, 0.0
+        return order, u, v
 
     A = _prefix_poisson_binomials(q)
     B = _suffix_poisson_binomials(q)
-    ef[0] = float(np.prod(1.0 - q)) * (1.0 - miss_prob)
+    # the empty prediction scores 1 when the true set is empty, 0 otherwise, so
+    # a missed match makes it worthless rather than merely cheaper
+    u[0] = float(np.prod(1.0 - q))
+    v[0] = 0.0
     for k in range(1, n + 1):
         Ak, Bk = A[k], B[k]
         num = np.convolve(np.arange(len(Ak), dtype=np.float64) * Ak, Bk)
         s = np.arange(len(num), dtype=np.float64)
-        val = (1.0 + beta2) * ((1.0 - miss_prob) / (beta2 * s + k)
-                               + miss_prob / (beta2 * (s + 1.0) + k))
-        ef[k] = float(num @ val)
-    return order, ef
+        u[k] = float(num @ ((1.0 + beta2) / (beta2 * s + k)))
+        v[k] = float(num @ ((1.0 + beta2) / (beta2 * (s + 1.0) + k)))
+    return order, u, v
+
+
+def expected_f05_topk(p: np.ndarray, beta2: float = BETA2,
+                      miss_prob: float = 0.0) -> Tuple[np.ndarray, np.ndarray]:
+    """Return ``(order, ef)`` — the descending order and E[F] for every prefix.
+
+    ``ef[k]`` is the expected per-entity F_0.5 of predicting the top-k
+    candidates.  ``miss_prob`` is the probability that at least one true match
+    never entered the candidate list: it raises the true-set size the rule is
+    implicitly budgeting for, which makes one more predicted candidate cheaper
+    and the empty prediction worthless, so a blocking-lossy segment stops
+    under-predicting.
+    """
+    order, u, v = expected_f05_components(p, beta2=beta2)
+    if miss_prob == 0.0:
+        return order, u
+    return order, (1.0 - miss_prob) * u + miss_prob * v
+
+
+def decide_sweep(p: Sequence[float], miss_probs: Sequence[float],
+                 beta2: float = BETA2) -> List[Tuple[Set[int], float]]:
+    """:func:`decide` for several ``miss_prob`` values in one pass.
+
+    Only the mixing weights change between values, so the Poisson-binomial
+    ladders and the convolutions — all of the cost — are shared.
+    """
+    order, u, v = expected_f05_components(np.asarray(p, dtype=np.float64), beta2=beta2)
+    out: List[Tuple[Set[int], float]] = []
+    for m in miss_probs:
+        ef = u if m == 0.0 else (1.0 - m) * u + m * v
+        k = int(np.argmax(ef))
+        out.append((set(order[:k].tolist()), float(ef[k])))
+    return out
 
 
 def decide(p: Sequence[float], beta2: float = BETA2,

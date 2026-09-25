@@ -161,6 +161,27 @@ def apply_threshold(K: pd.DataFrame, prob: np.ndarray, t: float) -> Dict[str, Li
     return predictions_to_dict(K, prob >= t)
 
 
+def expected_f_masks(K: pd.DataFrame, prob: np.ndarray, T: float,
+                     miss_probs: Sequence[float]) -> List[np.ndarray]:
+    """One selection mask per ``miss_prob``, from a single pass over the entities.
+
+    The Poisson-binomial ladders and the convolution behind ``E[F_k]`` do not
+    depend on the miss probability — only the two weights that mix the complete
+    and one-missing cases do — so a whole sweep costs what one value used to.
+    See :func:`ber.decide.expected_f05_components`.
+    """
+    from .decide import decide_sweep
+    s1 = K["s1"].to_numpy()
+    p = temper(prob, T) if T != 1.0 else np.asarray(prob, dtype=np.float64)
+    bounds = group_starts(s1)
+    keeps = [np.zeros(len(p), dtype=bool) for _ in miss_probs]
+    for a, b in zip(bounds[:-1], bounds[1:]):
+        for keep, (chosen, _) in zip(keeps, decide_sweep(p[a:b], miss_probs)):
+            if chosen:
+                keep[a + np.fromiter(chosen, dtype=np.int64, count=len(chosen))] = True
+    return keeps
+
+
 def expected_f_mask(K: pd.DataFrame, prob: np.ndarray, T: float = 1.0,
                     miss_prob: float = 0.0) -> np.ndarray:
     """Boolean mask of the rows the expected-F_0.5 rule selects.
@@ -169,15 +190,7 @@ def expected_f_mask(K: pd.DataFrame, prob: np.ndarray, T: float = 1.0,
     gigabytes of Python strings, while the mask is one byte per candidate.
     Rows must already be sorted by S1.
     """
-    s1 = K["s1"].to_numpy()
-    p = temper(prob, T) if T != 1.0 else np.asarray(prob, dtype=np.float64)
-    bounds = group_starts(s1)
-    keep = np.zeros(len(p), dtype=bool)
-    for a, b in zip(bounds[:-1], bounds[1:]):
-        chosen, _ = decide(p[a:b], miss_prob=miss_prob)
-        if chosen:
-            keep[a + np.fromiter(chosen, dtype=np.int64, count=len(chosen))] = True
-    return keep
+    return expected_f_masks(K, prob, T, (miss_prob,))[0]
 
 
 def decision_mask(K: pd.DataFrame, prob: np.ndarray, rule: Tuple) -> np.ndarray:
@@ -199,23 +212,47 @@ def apply_expected_f(K: pd.DataFrame, prob: np.ndarray, T: float = 1.0,
     return out
 
 
+#: Temperatures and candidate-miss probabilities the decision search sweeps.
+#:
+#: Both grids were widened after the first full run, and for the same reason: it
+#: chose ``T = 0.6`` for both countries, which was the *edge* of the old set, and
+#: ``miss_prob`` was never swept at all — the rule always assumed the candidate
+#: list was complete.  It is not: India's pruned full-cluster recall is 0.754, so
+#: for a quarter of entities at least one true match never reached the matcher.
+#: Telling the rule that raises the true-set size it budgets for, which makes one
+#: more predicted candidate cheaper and the empty prediction worthless, and at
+#: this operating point recall is worth about 4.6x precision per unit
+#: (P = 0.974, R = 0.838 -> dlnF/dlnR = 0.82 against dlnF/dlnP = 0.18).
+DECISION_TEMPS: Tuple[float, ...] = (0.35, 0.45, 0.55, 0.6, 0.7, 0.8, 1.0, 1.25, 1.6)
+DECISION_MISS: Tuple[float, ...] = (0.0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40)
+
+
 def search_decision(K: pd.DataFrame, prob: np.ndarray, gold: Dict[str, Iterable[str]],
                     keys: Sequence[str],
                     thresholds: Sequence[float] = tuple(np.arange(0.30, 0.96, 0.025)),
-                    temps: Sequence[float] = (0.6, 0.8, 1.0, 1.25, 1.6),
-                    miss_probs: Sequence[float] = (0.0,)
+                    temps: Sequence[float] = DECISION_TEMPS,
+                    miss_probs: Sequence[float] = DECISION_MISS
                     ) -> Tuple[Tuple, float, Dict[Tuple, float]]:
     """Tuned global threshold vs the expected-F rule; returns the winner and all scores."""
     res: Dict[Tuple, float] = {}
     for t in thresholds:
         res[("threshold", round(float(t), 3))] = macro_f05(
             apply_threshold(K, prob, t), gold, keys)
+    all_keys = [f"S1-{i}" for i in K["s1"].to_numpy()]
     for T in temps:
-        for mp in miss_probs:
-            res[("eum", T, mp)] = macro_f05(
-                apply_expected_f(K, prob, T=T, miss_prob=mp), gold, keys)
+        for mp, keep in zip(miss_probs, expected_f_masks(K, prob, T, miss_probs)):
+            res[("eum", T, mp)] = macro_f05(_pred_dict(K, keep, all_keys), gold, keys)
     best = max(res, key=res.get)
     return best, res[best], res
+
+
+def _pred_dict(K: pd.DataFrame, keep: np.ndarray,
+               all_keys: Sequence[str]) -> Dict[str, List[str]]:
+    out: Dict[str, List[str]] = {k: [] for k in all_keys}
+    sel = K.loc[keep]
+    for a, b, c in zip(sel["s1"].to_numpy(), sel["src"].to_numpy(), sel["cid"].to_numpy()):
+        out[f"S1-{a}"].append(f"S{b}-{c}")
+    return out
 
 
 def apply_decision(K: pd.DataFrame, prob: np.ndarray, rule: Tuple) -> Dict[str, List[str]]:
