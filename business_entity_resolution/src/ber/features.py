@@ -437,8 +437,9 @@ def pair_feature_row(v1: RecordView, v2: RecordView, roles: TokenRoles,
         out[42] = (float(bool(v1.pins & v2.pins)) if (v1.pins and v2.pins) else NAN)
         out[43] = jaccard(v1.addr_skel_grams, v2.addr_skel_grams)
         amax = roles.max_addr_idf(country)
-        ar = [v1.addr_w[t] for t in v1.addr_tok_set & v2.addr_tok_set
-              if not t.isdigit()]
+        # ``sh`` above is already this intersection; set intersection is 38% of
+        # worker time at this scale, so recomputing one is not free
+        ar = [v1.addr_w[t] for t in sh if not t.isdigit()]
         out[44] = (max(ar) / amax) if ar and amax > 0 else 0.0
     else:
         out[40] = out[41] = out[42] = out[43] = NAN
