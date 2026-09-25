@@ -266,7 +266,7 @@ against the whole 4,133,346-record S2+S3 pool, the same one every row of
 
 ---
 
-## 6. Runtime
+## 6. Runtime, and what the featurise stage taught
 
 | stage | v2 (submitted) | v3 (`eps=0.001`) |
 | --- | --- | --- |
@@ -281,6 +281,62 @@ against the whole 4,133,346-record S2+S3 pool, the same one every row of
 Splitting the retrieval fingerprint out (§2.3) is what makes the second column
 possible: every sweep and every run on this branch reuses 5 GB of cached raw
 candidates and the pre-ranker fitted to them.
+
+### The stage was invisible, and that cost two restarts
+
+`featurize_partition` printed **once, at the end of a partition**. A run that had
+stopped making progress therefore looked exactly like a run that was busy, which
+is how forty-five minutes passed on the first attempt before anything was known.
+That is the same lesson the blocking stage already learned the hard way
+(`PROGRESS.md` §7, fix 5) and it had not been applied here. Each shard now logs a
+cumulative count and a rate, so the stage is legible in the first few minutes.
+
+### What the cost actually is — measured, not inferred
+
+Two of my own diagnoses were wrong, and the measurements are worth keeping
+because they say where this stage's limit really is.
+
+**Wrong #1: "the v3 features are expensive."** Timed on real India records with
+the real corpus statistics:
+
+| | µs |
+| --- | --- |
+| `RecordView` construction | 43.6 per record |
+| `pair_feature_row` (62 columns) | 48.0 per pair |
+| of which the new address skeleton + grams | 7.6 per record |
+| **v3 total** | **~92 per pair** |
+| v2 total, from `PROGRESS.md` §9 (41 + 57) | ~98 per pair |
+
+The ten new columns are a **wash**. Candidate density is such that a block builds
+roughly one record view per pair, so view cost sits on the critical path — and it
+did not grow. No feature was trimmed on speed grounds, because none needed to be.
+
+**Wrong #2: "the machine is out of memory."** `vm_stat` showed free pages at
+0.03 GB with 7 GB in the compressor, which looks alarming and is *normal* on
+macOS — the OS keeps free memory near zero by design. Summed RSS across every
+process on the machine was 7.0 GB of 16. The honest signal was the one that
+needed no interpretation: the parent's own resident set had been evicted to 2 MB
+and it was blocked in `take_gil` for 2,324 of 2,329 samples.
+
+**What is real.** The workers are *starved*, and how starved depends on the
+worker count in a way that is not monotone:
+
+| workers | per-worker duty cycle | throughput |
+| --- | --- | --- |
+| 8 (v2, smaller table) | ~15% | 13,560 pairs/s |
+| 4 | ~37% | 4,850 pairs/s |
+| 6, after the numpy-column change | ~61% | _pending_ |
+
+The parent prepares every block single-threaded under the GIL, so it is the
+ceiling; the changes that matter are the ones that make *it* cheaper. The
+pandas-free candidate loader is the substantive one — `pd.concat` of both sources
+followed by `sort_values` held two or three copies of a table that is 0.75 GB at
+training scale and over 2 GB at test scale, where the rest of the module only
+ever reads plain numpy arrays. Reading column by column and sorting with
+`lexsort`, releasing each arrow buffer as it goes, removes those copies outright.
+
+Capping the default worker count at 4 was a mis-step on the strength of the
+duty-cycle reading, and this run overrides it on the command line.
 
 ---
 
