@@ -1,0 +1,28 @@
+# NOTE: .gitignore has no trailing comments — a pattern runs to end of line.
+# Every comment here is on its own line, on purpose.
+
+# The challenge data (2.3 GB). Download separately; see SETUP.md.
+student_resource/
+
+# Generated artefacts, all rebuilt by ./run_all.sh
+# work/ reaches ~40 GB and output/ ~900 MB
+work/
+output/
+output_v1/
+
+# The packaged submission (~380 MB)
+*.zip
+
+# Environment
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Source PDFs: large, and not ours to redistribute
+*.pdf
+
+# results/ IS committed on purpose: it is small and it is the evidence.

@@ -1,0 +1,426 @@
+{
+ "blocking": {
+  "raw": [
+   {
+    "n": 120000,
+    "pair_recall": 0.9282341082250145,
+    "full_cluster_recall": 0.8132624777104924,
+    "avg_candidates": 159.77635,
+    "f05_ceiling": 0.9715199969225707,
+    "candidate_pairs": 19173162,
+    "reduction_ratio": 0.9999613445499118,
+    "pool_size": 4133346,
+    "country": "India",
+    "stage": "raw union"
+   },
+   {
+    "n": 120000,
+    "pair_recall": 0.973099626116541,
+    "full_cluster_recall": 0.9163104691231811,
+    "avg_candidates": 159.89645833333333,
+    "f05_ceiling": 0.9908536625196892,
+    "candidate_pairs": 19187575,
+    "reduction_ratio": 0.9999741555292417,
+    "pool_size": 6186873,
+    "country": "US",
+    "stage": "raw union"
+   }
+  ],
+  "pruned": [
+   {
+    "n": 120000,
+    "pair_recall": 0.9021076765037734,
+    "full_cluster_recall": 0.7536854928408749,
+    "avg_candidates": 33.75098333333333,
+    "f05_ceiling": 0.9600798121148664,
+    "candidate_pairs": 4050118,
+    "reduction_ratio": 0.9999918344645395,
+    "pool_size": 4133346,
+    "country": "India",
+    "stage": "pruned"
+   },
+   {
+    "n": 120000,
+    "pair_recall": 0.9611738257534773,
+    "full_cluster_recall": 0.8831466417548715,
+    "avg_candidates": 31.599783333333335,
+    "f05_ceiling": 0.9865603222385281,
+    "candidate_pairs": 3791974,
+    "reduction_ratio": 0.9999948924467443,
+    "pool_size": 6186873,
+    "country": "US",
+    "stage": "pruned"
+   }
+  ]
+ },
+ "stack": {
+  "countries": [
+   "India",
+   "US"
+  ],
+  "m1": {
+   "rows": 7845394,
+   "pos_rate": 0.0985069710966715,
+   "best_iteration": 1544,
+   "top_features": [
+    [
+     "r_pre",
+     38.6
+    ],
+    [
+     "r_rrf",
+     19.59
+    ],
+    [
+     "num_unmatched_1",
+     4.81
+    ],
+    [
+     "addr_contain",
+     4.68
+    ],
+    [
+     "x_rrf_rank",
+     4.64
+    ],
+    [
+     "num_rel",
+     3.41
+    ],
+    [
+     "num_unmatched_2",
+     3.41
+    ],
+    [
+     "name_lev",
+     3.03
+    ],
+    [
+     "name_skel_jac",
+     2.24
+    ],
+    [
+     "name_jw",
+     2.0
+    ],
+    [
+     "name_tset",
+     1.38
+    ],
+    [
+     "addr_unmatched_2",
+     1.3
+    ],
+    [
+     "alias_best",
+     1.23
+    ],
+    [
+     "name_me_21",
+     1.2
+    ],
+    [
+     "name_freq_max",
+     1.16
+    ]
+   ]
+  },
+  "m2": {
+   "rows": 3270262,
+   "pos_rate": 0.09863154695250717,
+   "best_iteration": 590,
+   "top_features": [
+    [
+     "m_excl_prob",
+     71.26
+    ],
+    [
+     "m_prob",
+     22.98
+    ],
+    [
+     "m_rank",
+     2.52
+    ],
+    [
+     "m_gap_to_best",
+     0.54
+    ],
+    [
+     "m_score_share",
+     0.36
+    ],
+    [
+     "m_best_other_source",
+     0.31
+    ],
+    [
+     "name_freq_max",
+     0.25
+    ],
+    [
+     "name_len_ratio",
+     0.24
+    ],
+    [
+     "m_n_strong",
+     0.24
+    ],
+    [
+     "x_rrf_rank",
+     0.21
+    ],
+    [
+     "addr_len_ratio",
+     0.19
+    ],
+    [
+     "x_n_cands",
+     0.12
+    ],
+    [
+     "num_unmatched_2",
+     0.09
+    ],
+    [
+     "m_n_competitors",
+     0.09
+    ],
+    [
+     "num_unmatched_1",
+     0.08
+    ]
+   ]
+  },
+  "calibration": {
+   "rows": 1960885,
+   "ece_raw": 0.00034953311021121186,
+   "ece_calibrated": 7.620562552083521e-19,
+   "reliability_raw": [
+    {
+     "bin": "[0.00,0.10)",
+     "n": 1744905,
+     "mean_p": 0.0012,
+     "frac_pos": 0.0013
+    },
+    {
+     "bin": "[0.10,0.20)",
+     "n": 10410,
+     "mean_p": 0.1437,
+     "frac_pos": 0.145
+    },
+    {
+     "bin": "[0.20,0.30)",
+     "n": 5817,
+     "mean_p": 0.246,
+     "frac_pos": 0.2512
+    },
+    {
+     "bin": "[0.30,0.40)",
+     "n": 4375,
+     "mean_p": 0.3478,
+     "frac_pos": 0.3472
+    },
+    {
+     "bin": "[0.40,0.50)",
+     "n": 3522,
+     "mean_p": 0.4489,
+     "frac_pos": 0.4463
+    },
+    {
+     "bin": "[0.50,0.60)",
+     "n": 3285,
+     "mean_p": 0.5495,
+     "frac_pos": 0.5534
+    },
+    {
+     "bin": "[0.60,0.70)",
+     "n": 3466,
+     "mean_p": 0.6508,
+     "frac_pos": 0.6151
+    },
+    {
+     "bin": "[0.70,0.80)",
+     "n": 4218,
+     "mean_p": 0.7519,
+     "frac_pos": 0.7487
+    },
+    {
+     "bin": "[0.80,0.90)",
+     "n": 6818,
+     "mean_p": 0.8555,
+     "frac_pos": 0.8485
+    },
+    {
+     "bin": "[0.90,1.00)",
+     "n": 174069,
+     "mean_p": 0.9928,
+     "frac_pos": 0.9921
+    }
+   ]
+  },
+  "seconds": 423.0
+ },
+ "validation": {
+  "per_country": {
+   "India": {
+    "macro_f05": 0.9158961717735037,
+    "n": 120000,
+    "micro_precision": 0.9785328312237362,
+    "micro_recall": 0.8307892540013616,
+    "pred_ids": 352911,
+    "true_ids": 415671,
+    "tp": 345335,
+    "n_singleton": 6718,
+    "singleton_accuracy": 0.8983328371539149,
+    "avg_pred_size": 2.940925,
+    "rule": "('eum', 0.8, 0.0)",
+    "country": "India"
+   },
+   "US": {
+    "macro_f05": 0.9576178520288866,
+    "n": 120000,
+    "micro_precision": 0.9890634049947191,
+    "micro_recall": 0.9073947175436698,
+    "pred_ids": 381563,
+    "true_ids": 415905,
+    "tp": 377390,
+    "n_singleton": 6533,
+    "singleton_accuracy": 0.9409153528241236,
+    "avg_pred_size": 3.179691666666667,
+    "rule": "('eum', 0.6, 0.0)",
+    "country": "US"
+   }
+  },
+  "decision": {
+   "India": {
+    "('threshold', 0.3)": 0.90554,
+    "('threshold', 0.325)": 0.90599,
+    "('threshold', 0.35)": 0.90944,
+    "('threshold', 0.375)": 0.91063,
+    "('threshold', 0.4)": 0.91077,
+    "('threshold', 0.425)": 0.91217,
+    "('threshold', 0.45)": 0.91275,
+    "('threshold', 0.475)": 0.91348,
+    "('threshold', 0.5)": 0.91379,
+    "('threshold', 0.525)": 0.91423,
+    "('threshold', 0.55)": 0.91435,
+    "('threshold', 0.575)": 0.91447,
+    "('threshold', 0.6)": 0.91417,
+    "('threshold', 0.625)": 0.914,
+    "('threshold', 0.65)": 0.91403,
+    "('threshold', 0.675)": 0.91323,
+    "('threshold', 0.7)": 0.9132,
+    "('threshold', 0.725)": 0.9125,
+    "('threshold', 0.75)": 0.91158,
+    "('threshold', 0.775)": 0.91062,
+    "('threshold', 0.8)": 0.90908,
+    "('threshold', 0.825)": 0.90569,
+    "('threshold', 0.85)": 0.9032,
+    "('threshold', 0.875)": 0.89873,
+    "('threshold', 0.9)": 0.89517,
+    "('threshold', 0.925)": 0.88513,
+    "('threshold', 0.95)": 0.8723,
+    "('eum', 0.6, 0.0)": 0.91586,
+    "('eum', 0.8, 0.0)": 0.9159,
+    "('eum', 1.0, 0.0)": 0.91589,
+    "('eum', 1.25, 0.0)": 0.91557,
+    "('eum', 1.6, 0.0)": 0.9146
+   },
+   "US": {
+    "('threshold', 0.3)": 0.94902,
+    "('threshold', 0.325)": 0.94959,
+    "('threshold', 0.35)": 0.95232,
+    "('threshold', 0.375)": 0.95341,
+    "('threshold', 0.4)": 0.95363,
+    "('threshold', 0.425)": 0.95471,
+    "('threshold', 0.45)": 0.95514,
+    "('threshold', 0.475)": 0.95582,
+    "('threshold', 0.5)": 0.95611,
+    "('threshold', 0.525)": 0.95654,
+    "('threshold', 0.55)": 0.95662,
+    "('threshold', 0.575)": 0.95726,
+    "('threshold', 0.6)": 0.95721,
+    "('threshold', 0.625)": 0.95717,
+    "('threshold', 0.65)": 0.95718,
+    "('threshold', 0.675)": 0.95685,
+    "('threshold', 0.7)": 0.95682,
+    "('threshold', 0.725)": 0.95628,
+    "('threshold', 0.75)": 0.95587,
+    "('threshold', 0.775)": 0.95543,
+    "('threshold', 0.8)": 0.95467,
+    "('threshold', 0.825)": 0.95306,
+    "('threshold', 0.85)": 0.9517,
+    "('threshold', 0.875)": 0.94946,
+    "('threshold', 0.9)": 0.94768,
+    "('threshold', 0.925)": 0.94267,
+    "('threshold', 0.95)": 0.93615,
+    "('eum', 0.6, 0.0)": 0.95762,
+    "('eum', 0.8, 0.0)": 0.95748,
+    "('eum', 1.0, 0.0)": 0.95729,
+    "('eum', 1.25, 0.0)": 0.95684,
+    "('eum', 1.6, 0.0)": 0.95556
+   }
+  }
+ },
+ "loco": {
+  "India->US": {
+   "macro_f05": 0.93534,
+   "rule": "('eum', 0.6, 0.0)",
+   "n": 120000
+  },
+  "US->India": {
+   "macro_f05": 0.84551,
+   "rule": "('eum', 1.6, 0.0)",
+   "n": 120000
+  },
+  "mean": {
+   "macro_f05": 0.89043
+  }
+ },
+ "headline": {
+  "per_country": {
+   "India": 0.9158961717735037,
+   "US": 0.9576178520288866
+  },
+  "loco_mean": 0.89043,
+  "test_mix": {
+   "India": 0.4675125133907133,
+   "US": 0.3827354456798788,
+   "LOCO": 0.14975204092940786
+  },
+  "reweighted": 0.92805092646282
+ },
+ "final_rule": "('eum', 0.6, 0.0)",
+ "output": {
+  "countries": {
+   "France": {
+    "pairs_scored": 12764019,
+    "ids_predicted": 822625,
+    "s1": 259452
+   },
+   "India": {
+    "pairs_scored": 27528332,
+    "ids_predicted": 2414102,
+    "s1": 809986
+   },
+   "US": {
+    "pairs_scored": 20783504,
+    "ids_predicted": 2122575,
+    "s1": 663106
+   }
+  },
+  "rule": "('eum', 0.6, 0.0)",
+  "candidate_pairs.tsv": {
+   "rows": 1732544,
+   "non_empty": 1732544,
+   "ids": 61075855
+  },
+  "matching_results.tsv": {
+   "rows": 1732544,
+   "non_empty": 1620563,
+   "ids": 5359302
+  }
+ },
+ "seconds": 15351.1
+}

@@ -1,0 +1,238 @@
+"""Features must be country-agnostic, NaN-safe and behave the way the doc claims."""
+import math
+
+import numpy as np
+import pytest
+
+from ber.features import (META_FEATURES, N_PAIR, PAIR_FEATURES, RecordView,
+                          build_meta_features, jaccard, monge_elkan,
+                          monotone_vector, number_relation, pair_feature_row,
+                          soft_tfidf, group_starts, rank_within_groups,
+                          best_other_source)
+from ber.normalize import TokenRoles
+
+
+@pytest.fixture(scope="module")
+def real_roles():
+    """The corpus statistics actually fitted on the training files, when present."""
+    import pickle
+    from ber.corpus import roles_path
+    path = roles_path("train")
+    if not path.exists():
+        pytest.skip("train corpus statistics not built yet")
+    with open(path, "rb") as fh:
+        return pickle.load(fh)
+
+
+@pytest.fixture(scope="module")
+def roles():
+    brands = ["apex", "beta", "gamma", "delta", "epsilon", "zeta", "eta"]
+    names, ctry, addr = [], [], []
+    for b in brands:
+        for o in brands:
+            if b == o:
+                continue
+            names += [f"{b} {o} digital llc", f"digital {o} {b} llc"]
+            ctry += ["US", "US"]
+            addr += ["1795 westchester drive high point nc", "17560 ellis road tahlequah ok"]
+    # an Indian partition too, so the legal-form tests have private/limited/ltd.
+    # Addresses must vary or every token's IDF collapses to zero.
+    cities = ["ernakulam", "jaipur", "kochi", "bhopal", "gurgaon", "nagpur", "indore"]
+    for i, b in enumerate(brands):
+        for j, o in enumerate(brands):
+            if b == o:
+                continue
+            for k, suffix in enumerate(("private limited", "limited", "ltd")):
+                names.append(f"{b} {o} traders {suffix}")
+                ctry.append("India")
+                addr.append(f"{10 + i * 7 + j} mg road {cities[(i + j + k) % len(cities)]}")
+    return TokenRoles(min_share=0.01, bigram_min_share=0.01).fit(names, ctry, addr, min_df=1)
+
+
+def feats(roles, n1, a1, n2, a2, country="US"):
+    v1 = RecordView(n1, a1, country, roles)
+    v2 = RecordView(n2, a2, country, roles)
+    out = np.empty(N_PAIR, dtype=np.float64)
+    pair_feature_row(v1, v2, roles, country, out)
+    return dict(zip(PAIR_FEATURES, out))
+
+
+def test_identical_records_score_at_the_top(roles):
+    f = feats(roles, "Apex Digital LLC", "1795 Westchester Drive, High Point, NC",
+              "Apex Digital LLC", "1795 Westchester Drive, High Point, NC")
+    assert f["name_jw"] == 1.0
+    assert f["name_lev"] == 1.0
+    assert f["addr_contain"] == pytest.approx(1.0)
+    assert f["num_rel"] == 1.0
+    assert f["addr_unmatched_1"] == pytest.approx(0.0)
+
+
+def test_zero_padded_number_is_an_exact_match(roles):
+    f = feats(roles, "Apex Digital LLC", "3182 Lynchburg Street",
+              "APEX DIGITAL", "003182 LYNCHBURG STREET")
+    assert f["num_rel"] == 1.0          # class 1: a number in common
+
+
+def test_neighbouring_house_number_is_the_hard_negative(roles):
+    """The dominant same-name hard negative: same street, a few doors away."""
+    f = feats(roles, "Apex Digital LLC", "616 Orville Avenue, Columbus, OH",
+              "Apex Digital LLC", "627 Orville Avenue, Columbus, OH")
+    assert f["num_rel"] == 4.0          # class 4: differ by 3-20
+    assert f["name_jw"] == 1.0          # names give no evidence at all
+    assert f["num_min_diff"] == pytest.approx(math.log1p(11))
+
+
+def test_number_truncation_class(roles):
+    f = feats(roles, "X Ltd", "1447 Dolley Madison Blvd", "X Ltd", "447 Dolley Madison Blvd")
+    assert f["num_rel"] == 2.0
+
+
+def test_missing_address_is_nan_not_zero(roles):
+    f = feats(roles, "Apex Digital LLC", "1795 Westchester Drive", "Apex Digital LLC", "")
+    assert f["addr_missing"] == 1.0
+    assert math.isnan(f["addr_contain"])
+    assert math.isnan(f["num_min_diff"])
+    assert f["num_rel"] == 0.0          # class 0: missing
+
+
+def test_native_script_name_is_bridged_by_the_skeleton(roles):
+    f = feats(roles, "Dynamic Hospitality Private Limited", "12 MG Road",
+              "डायनामिक हॉस्पिटैलिटी प्राइवेट लिमिटेड", "12 MG Road", country="India")
+    assert f["name_skel_jac"] == pytest.approx(1.0)
+    assert f["name_gram_jac"] < 0.8      # the romanised form alone matches poorly
+    assert f["native_flag"] == 1.0
+
+
+def test_abbreviation_is_partial_not_equal(roles):
+    f = feats(roles, "Apex Digital Pvt Ltd", "1 Rd", "Apex Digital Private Limited", "1 Road")
+    assert 0.0 < f["addr_me"] <= 1.0
+    assert f["name_me_12"] > 0.8
+
+
+def test_containment_beats_jaccard_on_one_sided_landmarks(roles):
+    short = feats(roles, "A Ltd", "12 MG Road", "A Ltd", "12 MG Road", country="India")
+    longer = feats(roles, "A Ltd", "12 MG Road", "A Ltd",
+                   "12 MG Road, Near Fortis Hospital, Opp SBI ATM, Bengaluru", country="India")
+    assert longer["addr_contain"] == pytest.approx(short["addr_contain"], abs=1e-6)
+    assert longer["addr_unmatched_2"] > longer["addr_unmatched_1"]
+
+
+def test_domain_alias(roles):
+    f = feats(roles, "8913 Textiles", "1 Main St", "8913textiles.com", "1 Main St")
+    assert f["domain_flag"] == 1.0
+    assert f["alias_best"] > 0.8
+
+
+def test_the_dropped_word_that_every_other_feature_missed(real_roles):
+    """The worked example from the training data, on the real corpus statistics.
+
+    S1-499359562 "Valiant Entertainment Private Limited" has three true matches,
+    all keeping *Private*; "Valiant Entertainment Limited" at a byte-identical
+    address matches no S1 at all.  Three features are blind to that word — the
+    core name strips it (the affix bigram is flagged), `token_set_ratio` returns
+    100 for a subset, and its IDF is too low to move the weighted mass — so the
+    one-sided token count has to carry it.
+    """
+    addr = ("Dd Trade Tower 2Nd Floor 36/2342 F-3 (Part) Kaloor Kadavanthara "
+            "Ernakulam Kl, Ernakulam, Kerala")
+    s1 = ("Valiant Entertainment Private Limited", addr)
+    truths = [("Valiant Entertainment-Private Ltd", "HN 789 " + addr),
+              ("Valiant Entertainment Private", addr),
+              ("Entertainment Valiant Private [Limited]", addr)]
+    distractor = ("Valiant Entertainment Limited", addr)
+
+    def f(cand):
+        return feats(real_roles, s1[0], s1[1], cand[0], cand[1], country="India")
+
+    for cand in truths:
+        assert f(cand)["name_tok_only_1"] == 0.0, cand
+    assert f(distractor)["name_tok_only_1"] >= 1.0
+
+    # and confirm the features that miss it really do miss it
+    for cand in truths + [distractor]:
+        g = f(cand)
+        assert g["name_tset"] == pytest.approx(1.0), cand
+        assert g["name_idf_unmatched_1"] == pytest.approx(0.0, abs=1e-6), cand
+
+
+def test_ltd_and_limited_are_not_a_missing_word(real_roles):
+    a = feats(real_roles, "Alpha Traders Limited", "1 MG Road",
+              "Alpha Traders Ltd", "1 MG Road", country="India")
+    assert a["name_tok_only_1"] == 0.0 and a["name_tok_only_2"] == 0.0
+
+
+def test_token_features_on_identical_names(roles):
+    addr = "12 MG Road, Ernakulam"
+    identical = feats(roles, "Alpha Traders Private Limited", addr,
+                      "Alpha Traders Private Limited", addr, country="India")
+    assert identical["name_tok_jac"] == pytest.approx(1.0)
+    assert identical["name_tok_only_1"] == 0.0 and identical["name_tok_only_2"] == 0.0
+    assert identical["name_tok_eq"] == 1.0
+
+
+def test_extra_word_is_counted_on_the_right_side(roles):
+    addr = "12 MG Road, Ernakulam"
+    f = feats(roles, "Alpha Beta Traders Private Limited", addr,
+              "Alpha Traders Private Limited", addr, country="India")
+    assert f["name_tok_only_1"] >= 1.0
+    assert f["name_tok_only_2"] == 0.0
+    g = feats(roles, "Alpha Traders Private Limited", addr,
+              "Alpha Beta Traders Private Limited", addr, country="India")
+    assert g["name_tok_only_2"] >= 1.0
+    assert g["name_tok_only_1"] == 0.0
+
+
+def test_word_order_change_is_not_a_missing_word(roles):
+    """'LLC Anchor Angel' vs 'Anchor Angel LLC' is a move, not a dropped token."""
+    f = feats(roles, "Anchor Angel LLC", "1 Main St", "LLC Anchor Angel", "1 Main St")
+    assert f["name_tok_jac"] == pytest.approx(1.0)
+    assert f["name_tok_only_1"] == 0.0 and f["name_tok_only_2"] == 0.0
+    assert f["name_tok_eq"] == 1.0
+
+
+def test_no_feature_encodes_the_country(roles):
+    """The same pair in two countries differs only through corpus statistics."""
+    assert "country" not in " ".join(PAIR_FEATURES)
+    assert len(monotone_vector(PAIR_FEATURES)) == N_PAIR
+
+
+def test_number_relation_classes():
+    assert number_relation(set(), {"1"}) == 0
+    assert number_relation({"1795"}, {"1795"}) == 1
+    assert number_relation({"1447"}, {"447"}) == 2
+    assert number_relation({"616"}, {"617"}) == 3
+    assert number_relation({"616"}, {"627"}) == 4
+    assert number_relation({"616"}, {"9999"}) == 5
+
+
+def test_jaccard_and_monge_elkan_nan_on_empty():
+    assert math.isnan(jaccard(set(), {"a"}))
+    assert math.isnan(monge_elkan([], ["a"], {}))
+    assert math.isnan(soft_tfidf([], {}, ["a"], {}))
+
+
+def test_meta_features_shapes_and_exclusivity():
+    s1 = np.array([0, 0, 0, 1, 1])
+    cand = np.array([10, 11, 12, 10, 13])      # candidate 10 is claimed twice
+    src = np.array([2, 3, 2, 2, 3], dtype=np.int8)
+    p = np.array([0.9, 0.4, 0.2, 0.6, 0.8])
+    M = build_meta_features(s1, cand, src, p)
+    assert M.shape == (5, len(META_FEATURES))
+    cols = dict(zip(META_FEATURES, M.T))
+    assert list(cols["m_rank"]) == [0, 1, 2, 1, 0]
+    assert cols["m_n_competitors"][0] == 2 and cols["m_n_competitors"][1] == 1
+    # the doc's worked example: 0.90 vs 0.60 on the same record -> 0.78 / 0.13
+    assert cols["m_excl_prob"][0] == pytest.approx(0.78, abs=0.01)
+    assert cols["m_excl_prob"][3] == pytest.approx(0.13, abs=0.01)
+
+
+def test_group_helpers():
+    g = np.array([0, 0, 1, 1, 1, 2])
+    b = group_starts(g)
+    assert list(b) == [0, 2, 5, 6]
+    s = np.array([0.1, 0.9, 0.5, 0.7, 0.2, 1.0])
+    assert list(rank_within_groups(b, s)) == [1, 0, 1, 0, 2, 0]
+    src = np.array([2, 3, 2, 3, 2, 2], dtype=np.int8)
+    bo = best_other_source(b, s, src)
+    assert bo[0] == pytest.approx(0.9)       # row 0 is S2, best S3 in group is 0.9
+    assert bo[1] == pytest.approx(0.1)

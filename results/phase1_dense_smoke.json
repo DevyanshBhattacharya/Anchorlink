@@ -1,0 +1,89 @@
+{
+ "scale": "mac",
+ "country": "India",
+ "settings": {
+  "repo": "intfloat/multilingual-e5-small",
+  "n_clusters": 400,
+  "pool_size": 4000,
+  "train_clusters": 6000,
+  "max_steps": 4,
+  "clusters_per_batch": 24,
+  "micro_batch": 24,
+  "max_length": 64,
+  "batch_size": 128,
+  "k": 30,
+  "pooling": "mean"
+ },
+ "slice": {
+  "queries": 404,
+  "pool": 3999,
+  "true_pairs": 1361,
+  "avg_true": 3.368811881188119,
+  "singletons": 18
+ },
+ "sparse": {
+  "pair_recall": 0.994121969140338,
+  "full_cluster_recall": 0.9844559585492227,
+  "avg_candidates": 72.29702970297029,
+  "seconds": 1.1
+ },
+ "device": {
+  "device": "mps",
+  "offline": "1",
+  "torch": "2.14.0"
+ },
+ "dense_zero_shot": {
+  "pair_recall": 0.9522409992652462,
+  "full_cluster_recall": 0.9093264248704663,
+  "avg_candidates": 30.0,
+  "encode_pool_s": 11.2,
+  "encode_query_s": 1.1,
+  "records_per_s": 357.5,
+  "dim": 384
+ },
+ "union_zero_shot": {
+  "pair_recall": 0.9985304922850845,
+  "full_cluster_recall": 0.9974093264248705,
+  "avg_candidates": 91.31435643564356
+ },
+ "training": {
+  "config": {
+   "repo": "intfloat/multilingual-e5-small",
+   "max_length": 64,
+   "clusters_per_batch": 24,
+   "micro_batch": 24,
+   "lr": 1e-05,
+   "epochs": 1,
+   "tau": 0.05,
+   "warmup_frac": 0.05,
+   "max_steps": 4,
+   "eval_every": 0,
+   "patience": 3,
+   "seed": 20260925,
+   "projection_dim": 0,
+   "grad_clip": 1.0
+  },
+  "device": "mps",
+  "steps": [],
+  "n_records": 2765,
+  "n_clusters": 1404,
+  "n_batches": 59,
+  "best_eval": -1.0,
+  "steps_run": 4,
+  "seconds": 8.8
+ },
+ "dense_tuned": {
+  "pair_recall": 0.9779573842762674,
+  "full_cluster_recall": 0.9507772020725389,
+  "avg_candidates": 30.0,
+  "encode_pool_s": 10.5,
+  "encode_query_s": 1.1,
+  "records_per_s": 380.2,
+  "dim": 384
+ },
+ "union_tuned": {
+  "pair_recall": 0.9985304922850845,
+  "full_cluster_recall": 0.9974093264248705,
+  "avg_candidates": 92.31683168316832
+ }
+}

@@ -1,0 +1,9 @@
+/Users/devyanshbhattacharya/Vs Code/ML Challenge 26/.venv/bin/python /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/utils/validate_submission.py --matching /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/output/matching_results.tsv --candidate /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/output/candidate_pairs.tsv --test-dir /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/dataset/test --check-ids
+ML Challenge 2026 — submission validator
+  test dir: /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/dataset/test
+  required S1 entities: 1732544
+  valid S2/S3 match IDs: 9969589
+  matching_results.tsv: 1732544 rows (111981 empty, 1620563 non-empty).
+  candidate_pairs.tsv: 1732544 rows (0 empty, 1732544 non-empty).
+
+PASS — no blocking issues found. Safe to submit.

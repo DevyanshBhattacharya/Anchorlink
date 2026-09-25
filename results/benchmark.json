@@ -1,0 +1,999 @@
+{
+ "blocking": [
+  {
+   "n": 120000,
+   "pair_recall": 0.9282341082250145,
+   "full_cluster_recall": 0.8132624777104924,
+   "avg_candidates": 159.77635,
+   "f05_ceiling": 0.9715199969225707,
+   "candidate_pairs": 19173162,
+   "reduction_ratio": 0.9999613445499118,
+   "pool_size": 4133346,
+   "country": "India",
+   "stage": "raw union"
+  },
+  {
+   "n": 120000,
+   "pair_recall": 0.9021076765037734,
+   "full_cluster_recall": 0.7536854928408749,
+   "avg_candidates": 33.75098333333333,
+   "f05_ceiling": 0.9600798121148664,
+   "candidate_pairs": 4050118,
+   "reduction_ratio": 0.9999918344645395,
+   "pool_size": 4133346,
+   "country": "India",
+   "stage": "pre-ranked"
+  },
+  {
+   "n": 120000,
+   "pair_recall": 0.973099626116541,
+   "full_cluster_recall": 0.9163104691231811,
+   "avg_candidates": 159.89645833333333,
+   "f05_ceiling": 0.9908536625196892,
+   "candidate_pairs": 19187575,
+   "reduction_ratio": 0.9999741555292417,
+   "pool_size": 6186873,
+   "country": "US",
+   "stage": "raw union"
+  },
+  {
+   "n": 120000,
+   "pair_recall": 0.9611738257534773,
+   "full_cluster_recall": 0.8831466417548715,
+   "avg_candidates": 31.599783333333335,
+   "f05_ceiling": 0.9865603222385281,
+   "candidate_pairs": 3791974,
+   "reduction_ratio": 0.9999948924467443,
+   "pool_size": 6186873,
+   "country": "US",
+   "stage": "pre-ranked"
+  }
+ ],
+ "matching": {
+  "India": {
+   "macro_f05": 0.9150869450113063,
+   "n": 120000,
+   "micro_precision": 0.974421624768398,
+   "micro_recall": 0.8375734655532862,
+   "pred_ids": 357294,
+   "true_ids": 415671,
+   "tp": 348155,
+   "n_singleton": 6718,
+   "singleton_accuracy": 0.8961000297707651,
+   "avg_pred_size": 2.97745,
+   "rule": "('eum', 0.6, 0.0)"
+  },
+  "US": {
+   "macro_f05": 0.9571235012529297,
+   "n": 120000,
+   "micro_precision": 0.9878923930882368,
+   "micro_recall": 0.9089070821461632,
+   "pred_ids": 382652,
+   "true_ids": 415905,
+   "tp": 378019,
+   "n_singleton": 6533,
+   "singleton_accuracy": 0.9380070411755702,
+   "avg_pred_size": 3.1887666666666665,
+   "rule": "('eum', 0.6, 0.0)"
+  }
+ },
+ "decision": {
+  "India": [
+   {
+    "probabilities": "m1_only",
+    "best_threshold": 0.6,
+    "F0.5 @ tuned threshold": 0.90909,
+    "F0.5 @ expected-F": 0.91084,
+    "expected-F temperature": 1.0,
+    "best rule": "('eum', 1.0, 0.0)",
+    "F0.5": 0.91084
+   },
+   {
+    "probabilities": "m1_only_excl",
+    "best_threshold": 0.6,
+    "F0.5 @ tuned threshold": 0.91064,
+    "F0.5 @ expected-F": 0.91222,
+    "expected-F temperature": 0.8,
+    "best rule": "('eum', 0.8, 0.0)",
+    "F0.5": 0.91222
+   },
+   {
+    "probabilities": "m2_raw",
+    "best_threshold": 0.6,
+    "F0.5 @ tuned threshold": 0.91329,
+    "F0.5 @ expected-F": 0.91548,
+    "expected-F temperature": 1.0,
+    "best rule": "('eum', 1.0, 0.0)",
+    "F0.5": 0.91548
+   },
+   {
+    "probabilities": "m2_calibrated",
+    "best_threshold": 0.6,
+    "F0.5 @ tuned threshold": 0.91309,
+    "F0.5 @ expected-F": 0.91546,
+    "expected-F temperature": 1.0,
+    "best rule": "('eum', 1.0, 0.0)",
+    "F0.5": 0.91546
+   },
+   {
+    "probabilities": "m2_calibrated_excl",
+    "best_threshold": 0.6,
+    "F0.5 @ tuned threshold": 0.91318,
+    "F0.5 @ expected-F": 0.91541,
+    "expected-F temperature": 1.0,
+    "best rule": "('eum', 1.0, 0.0)",
+    "F0.5": 0.91541
+   },
+   {
+    "probabilities": "m2_raw_excl",
+    "best_threshold": 0.6,
+    "F0.5 @ tuned threshold": 0.91344,
+    "F0.5 @ expected-F": 0.91548,
+    "expected-F temperature": 1.0,
+    "best rule": "('eum', 1.0, 0.0)",
+    "F0.5": 0.91548
+   }
+  ],
+  "US": [
+   {
+    "probabilities": "m1_only",
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.95356,
+    "F0.5 @ expected-F": 0.95344,
+    "expected-F temperature": 0.8,
+    "best rule": "('threshold', 0.65)",
+    "F0.5": 0.95356
+   },
+   {
+    "probabilities": "m1_only_excl",
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.95461,
+    "F0.5 @ expected-F": 0.95456,
+    "expected-F temperature": 0.6,
+    "best rule": "('threshold', 0.65)",
+    "F0.5": 0.95461
+   },
+   {
+    "probabilities": "m2_raw",
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.95613,
+    "F0.5 @ expected-F": 0.95659,
+    "expected-F temperature": 0.8,
+    "best rule": "('eum', 0.8, 0.0)",
+    "F0.5": 0.95659
+   },
+   {
+    "probabilities": "m2_calibrated",
+    "best_threshold": 0.6,
+    "F0.5 @ tuned threshold": 0.95613,
+    "F0.5 @ expected-F": 0.95669,
+    "expected-F temperature": 0.6,
+    "best rule": "('eum', 0.6, 0.0)",
+    "F0.5": 0.95669
+   },
+   {
+    "probabilities": "m2_calibrated_excl",
+    "best_threshold": 0.6,
+    "F0.5 @ tuned threshold": 0.95618,
+    "F0.5 @ expected-F": 0.95682,
+    "expected-F temperature": 0.6,
+    "best rule": "('eum', 0.6, 0.0)",
+    "F0.5": 0.95682
+   },
+   {
+    "probabilities": "m2_raw_excl",
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.95618,
+    "F0.5 @ expected-F": 0.9567,
+    "expected-F temperature": 0.6,
+    "best rule": "('eum', 0.6, 0.0)",
+    "F0.5": 0.9567
+   }
+  ]
+ },
+ "errors": {
+  "India": {
+   "false_positives": {
+    "n": 9139,
+    "patterns": [
+     {
+      "pattern": "name differs by a legal form or one token",
+      "n": 3185,
+      "share": 0.3485
+     },
+     {
+      "pattern": "no house number on one side",
+      "n": 1893,
+      "share": 0.2071
+     },
+     {
+      "pattern": "name partly overlapping",
+      "n": 1760,
+      "share": 0.1926
+     },
+     {
+      "pattern": "native-script name",
+      "n": 780,
+      "share": 0.0853
+     },
+     {
+      "pattern": "missing address on one side",
+      "n": 490,
+      "share": 0.0536
+     },
+     {
+      "pattern": "no shared name token",
+      "n": 351,
+      "share": 0.0384
+     },
+     {
+      "pattern": "house numbers unrelated",
+      "n": 226,
+      "share": 0.0247
+     },
+     {
+      "pattern": "house number truncated (1447 -> 447)",
+      "n": 150,
+      "share": 0.0164
+     }
+    ],
+    "examples": [
+     {
+      "s1": "S1-499359562",
+      "cand": "S2-83808461",
+      "p": 1.0,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "Valiant Entertainment Private Limited",
+      "s1_addr": "Dd Trade Tower 2Nd Floor 36/2342 F-3 (Part) Kaloor Kadavanthara Ernakulam Kl, Ernakulam, Kerala",
+      "cand_name": "Valiant Entertainment Limited",
+      "cand_addr": "DD TRADE TOWER 2ND FLOOR 36/2342 F-3 (PART) KALOOR KADAVANTHARA ERNAKULAM KL, ERNAKULAM, Kerala"
+     },
+     {
+      "s1": "S1-394185437",
+      "cand": "S2-514854666",
+      "p": 1.0,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "GE Brokers Private Limited",
+      "s1_addr": "Pn 80 Panchaseel Nagar Nagpur, Nagpur, Maharashtra",
+      "cand_name": "GE  Brokers Limited",
+      "cand_addr": "PN 80 PANCHASEEL NAGAR NAGPUR, NAGPUR, Maharashtra"
+     },
+     {
+      "s1": "S1-32881467",
+      "cand": "S2-442883886",
+      "p": 1.0,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "Indore India Limited",
+      "s1_addr": "4Th Floor, Rcm Icon, 3/1, Race Cource Road, -Opp. Abhay, Prashal Main Road, Indore, Indore, Madhya Pradesh",
+      "cand_name": "Indore India",
+      "cand_addr": "4TH FLOOR, RCM ICON, 3/1, RACE COURCE ROAD, INDORE, Madhya Pradesh"
+     },
+     {
+      "s1": "S1-824167956",
+      "cand": "S3-769162895",
+      "p": 0.9999,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "Jain Estate Private Limited",
+      "s1_addr": "23/1 Principal Khudiram Boseroad, Kolkata, Calcutta, West Bengal",
+      "cand_name": "Jain Estate Limited",
+      "cand_addr": "23/1 Principal Khudiram Boseroad, Calcutta, Beadon Street, WB"
+     },
+     {
+      "s1": "S1-876713311",
+      "cand": "S2-846129294",
+      "p": 0.9999,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "Nath Air Center",
+      "s1_addr": "House No 1 Mangu Panna Landmark Near Tatesar Wala Rasta Village Jaunti Delhi, Delhi, New Delhi, Delhi",
+      "cand_name": "NATH AIR C\u00c9NTER LLP",
+      "cand_addr": "HOUSE NO 1 MANGU PANNA LANDMARK NEAR TATESAR WALA RASTA VILLAGE JAUNTI DELHI, DELHI, \u0926\u093f\u0932\u094d\u0932\u0940"
+     }
+    ]
+   },
+   "false_negatives": {
+    "n": 26825,
+    "patterns": [
+     {
+      "pattern": "name differs by a legal form or one token",
+      "n": 5985,
+      "share": 0.2231
+     },
+     {
+      "pattern": "no shared name token",
+      "n": 4283,
+      "share": 0.1597
+     },
+     {
+      "pattern": "missing address on one side",
+      "n": 4223,
+      "share": 0.1574
+     },
+     {
+      "pattern": "no house number on one side",
+      "n": 3840,
+      "share": 0.1432
+     },
+     {
+      "pattern": "native-script name",
+      "n": 2847,
+      "share": 0.1061
+     },
+     {
+      "pattern": "name partly overlapping",
+      "n": 1634,
+      "share": 0.0609
+     },
+     {
+      "pattern": "house numbers unrelated",
+      "n": 1109,
+      "share": 0.0413
+     },
+     {
+      "pattern": "house numbers differ by 1-2 (same street, next door)",
+      "n": 833,
+      "share": 0.0311
+     }
+    ],
+    "examples": [
+     {
+      "s1": "S1-428012519",
+      "cand": "S3-720474325",
+      "p": 0.0,
+      "pattern": "house numbers differ by 3-20 (same street, a few doors away)",
+      "s1_name": "Leisure Brothers Private Limited",
+      "s1_addr": "Tf 29 Samanvay Sequence Manjalpur Road, Vadodara, Gujarat",
+      "cand_name": "Calosynsol",
+      "cand_addr": "Tf 2-9 Samanvay Sequence Majnalpur Road, Baroda, Vadodara, \u0a97\u0ac1\u0a9c\u0ab0\u0abe\u0aa4"
+     },
+     {
+      "s1": "S1-118198262",
+      "cand": "S2-615813343",
+      "p": 0.0,
+      "pattern": "missing address on one side",
+      "s1_name": "Future Products Limited",
+      "s1_addr": "Calcutta, West Bengal, Kolkata, 4/1A Dr Shyama Das Row",
+      "cand_name": "FUTURE LIMITED CENTER Enterprises",
+      "cand_addr": ""
+     },
+     {
+      "s1": "S1-711985992",
+      "cand": "S2-706740051",
+      "p": 0.0,
+      "pattern": "no shared name token",
+      "s1_name": "India Maharashtra Vyapaar Private Limited",
+      "s1_addr": "A-19-22, 3Rd Floor, Highway Towers Pune Mumbai Road, Chinchwad, Pune, Maharashtra",
+      "cand_name": "Synsol",
+      "cand_addr": "Maharashtra, A-19-2, CHINCHWAD, PUNE"
+     },
+     {
+      "s1": "S1-393620770",
+      "cand": "S3-415516197",
+      "p": 0.0,
+      "pattern": "missing address on one side",
+      "s1_name": "Ruby Pharmaceutical",
+      "s1_addr": "P. No. 165 2Nd Floor Rathore Nagar Vaishali Nagar, Jaipur, Rajasthan",
+      "cand_name": "Dr Ruby [Center]",
+      "cand_addr": ""
+     },
+     {
+      "s1": "S1-254424163",
+      "cand": "S2-535839838",
+      "p": 0.0,
+      "pattern": "missing address on one side",
+      "s1_name": "APS Foundation Pvt Ltd",
+      "s1_addr": "Flat No. 123 Sfs, Munirka Vihar, Opp. Jnu, New Delhi, South West Delhi, Delhi",
+      "cand_name": "APS APS Pvt Ltd Partners",
+      "cand_addr": ""
+     }
+    ]
+   }
+  },
+  "US": {
+   "false_positives": {
+    "n": 4633,
+    "patterns": [
+     {
+      "pattern": "name differs by a legal form or one token",
+      "n": 1512,
+      "share": 0.3264
+     },
+     {
+      "pattern": "name partly overlapping",
+      "n": 778,
+      "share": 0.1679
+     },
+     {
+      "pattern": "missing address on one side",
+      "n": 648,
+      "share": 0.1399
+     },
+     {
+      "pattern": "house number truncated (1447 -> 447)",
+      "n": 503,
+      "share": 0.1086
+     },
+     {
+      "pattern": "no shared name token",
+      "n": 354,
+      "share": 0.0764
+     },
+     {
+      "pattern": "house numbers unrelated",
+      "n": 318,
+      "share": 0.0686
+     },
+     {
+      "pattern": "house numbers differ by 1-2 (same street, next door)",
+      "n": 147,
+      "share": 0.0317
+     },
+     {
+      "pattern": "no house number on one side",
+      "n": 112,
+      "share": 0.0242
+     }
+    ],
+    "examples": [
+     {
+      "s1": "S1-291062612",
+      "cand": "S3-839053375",
+      "p": 1.0,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "Pediatric Dentistry Group of Ashland City Group",
+      "s1_addr": "151 Action Lane, Ashland City, TN",
+      "cand_name": "Pediatric Dentistry Group of Ashland City Group Corp",
+      "cand_addr": "151 Action Lane, Ashland City, Tennessee"
+     },
+     {
+      "s1": "S1-197010175",
+      "cand": "S2-453673792",
+      "p": 1.0,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "Corner Hypnosis",
+      "s1_addr": "16900 Salmonberry Road, Brookings, OR",
+      "cand_name": "Corner Hypnosis LLC",
+      "cand_addr": "16900 SALMONBERRY RD, BROOKINGS, OR"
+     },
+     {
+      "s1": "S1-252735592",
+      "cand": "S2-992076392",
+      "p": 1.0,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "Lowell Cancer Foundation",
+      "s1_addr": "MA, 33 Burns Street, Lowell",
+      "cand_name": "Lowell Cancer Foundation Inc",
+      "cand_addr": "33 BURNS ST, LOWELL, MA"
+     },
+     {
+      "s1": "S1-39256764",
+      "cand": "S3-330274012",
+      "p": 1.0,
+      "pattern": "identical name, same number",
+      "s1_name": "Internal Medicine Frontier Group",
+      "s1_addr": "3699 Broadbridge Avenue, Unit Unit 120, Stratford, CT",
+      "cand_name": "Internal Medicine Frontier Group Group",
+      "cand_addr": "3699 Broadbridge Avenue, # Unit 120, Stratford, Connecticut"
+     },
+     {
+      "s1": "S1-779212870",
+      "cand": "S3-217534767",
+      "p": 1.0,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "First Transit Dynamics Company",
+      "s1_addr": "570 Quarry Place Court, Reisterstown, MD",
+      "cand_name": "First Transit Dynamics Co.",
+      "cand_addr": "570 Quarry Place Ct, Reisterstown, Maryland"
+     }
+    ]
+   },
+   "false_negatives": {
+    "n": 21738,
+    "patterns": [
+     {
+      "pattern": "missing address on one side",
+      "n": 5789,
+      "share": 0.2663
+     },
+     {
+      "pattern": "no shared name token",
+      "n": 3841,
+      "share": 0.1767
+     },
+     {
+      "pattern": "name differs by a legal form or one token",
+      "n": 3601,
+      "share": 0.1657
+     },
+     {
+      "pattern": "house numbers unrelated",
+      "n": 2241,
+      "share": 0.1031
+     },
+     {
+      "pattern": "no house number on one side",
+      "n": 1356,
+      "share": 0.0624
+     },
+     {
+      "pattern": "house numbers differ by 1-2 (same street, next door)",
+      "n": 1304,
+      "share": 0.06
+     },
+     {
+      "pattern": "house numbers differ by 3-20 (same street, a few doors away)",
+      "n": 1175,
+      "share": 0.0541
+     },
+     {
+      "pattern": "name partly overlapping",
+      "n": 985,
+      "share": 0.0453
+     }
+    ],
+    "examples": [
+     {
+      "s1": "S1-591668623",
+      "cand": "S3-473472141",
+      "p": 0.0,
+      "pattern": "missing address on one side",
+      "s1_name": "Meridian Inc",
+      "s1_addr": "CT, Bristol, 117 Lewis Road",
+      "cand_name": "Meridian Associates",
+      "cand_addr": ""
+     },
+     {
+      "s1": "S1-476174685",
+      "cand": "S2-422130055",
+      "p": 0.0,
+      "pattern": "no house number on one side",
+      "s1_name": "Oden & Vermette Corp",
+      "s1_addr": "1517 Delaware Avenue, Unit R, Tulsa, OK",
+      "cand_name": "K0RFLUXDREX",
+      "cand_addr": "TULSA, OK, DELAWARE AVENUE"
+     },
+     {
+      "s1": "S1-630430527",
+      "cand": "S2-919947855",
+      "p": 0.0,
+      "pattern": "no shared name token",
+      "s1_name": "Owens & Cannon Inc.",
+      "s1_addr": "1452 Ellsworth Road, Unit 1339, Mesa, AZ",
+      "cand_name": "CALOBRIXZETA",
+      "cand_addr": "1452. ELLSWORTH RD, MESA, AZ"
+     },
+     {
+      "s1": "S1-604417590",
+      "cand": "S2-621008713",
+      "p": 0.0,
+      "pattern": "missing address on one side",
+      "s1_name": "Foundry Allocation",
+      "s1_addr": "1904 Terrace Court, Jeffersonville, IN",
+      "cand_name": "Foundry Center",
+      "cand_addr": ""
+     },
+     {
+      "s1": "S1-144285388",
+      "cand": "S2-836191561",
+      "p": 0.0,
+      "pattern": "missing address on one side",
+      "s1_name": "24HR Fitness",
+      "s1_addr": "2326 Country Gables Drive, Phoenix, AZ",
+      "cand_name": "24HR-Center",
+      "cand_addr": ""
+     }
+    ]
+   }
+  }
+ },
+ "segments": {
+  "India": [
+   {
+    "cluster size": "singleton",
+    "n": 6718,
+    "macro_f05": 0.8961,
+    "micro_precision": 0.0,
+    "micro_recall": 0.0
+   },
+   {
+    "cluster size": "1 match",
+    "n": 6449,
+    "macro_f05": 0.7973,
+    "micro_precision": 0.8999,
+    "micro_recall": 0.8319
+   },
+   {
+    "cluster size": "2-3",
+    "n": 49191,
+    "macro_f05": 0.9106,
+    "micro_precision": 0.9651,
+    "micro_recall": 0.845
+   },
+   {
+    "cluster size": "4-5",
+    "n": 43909,
+    "macro_f05": 0.9329,
+    "micro_precision": 0.9817,
+    "micro_recall": 0.8379
+   },
+   {
+    "cluster size": "6+",
+    "n": 13733,
+    "macro_f05": 0.9387,
+    "micro_precision": 0.9891,
+    "micro_recall": 0.8267
+   }
+  ],
+  "US": [
+   {
+    "cluster size": "singleton",
+    "n": 6533,
+    "macro_f05": 0.938,
+    "micro_precision": 0.0,
+    "micro_recall": 0.0
+   },
+   {
+    "cluster size": "1 match",
+    "n": 6545,
+    "macro_f05": 0.8722,
+    "micro_precision": 0.9403,
+    "micro_recall": 0.8947
+   },
+   {
+    "cluster size": "2-3",
+    "n": 49330,
+    "macro_f05": 0.9582,
+    "micro_precision": 0.9831,
+    "micro_recall": 0.9161
+   },
+   {
+    "cluster size": "4-5",
+    "n": 43896,
+    "macro_f05": 0.9677,
+    "micro_precision": 0.9922,
+    "micro_recall": 0.9086
+   },
+   {
+    "cluster size": "6+",
+    "n": 13696,
+    "macro_f05": 0.9691,
+    "micro_precision": 0.9948,
+    "micro_recall": 0.9002
+   }
+  ]
+ },
+ "stack_dir": "/Users/devyanshbhattacharya/Vs Code/ML Challenge 26/work/models/b3_k30_u80_df1_qb60k_key20_pr60__m1120k_pre50k_m250k_cal30k",
+ "stack": {
+  "countries": [
+   "India",
+   "US"
+  ],
+  "m1": {
+   "rows": 7845394,
+   "pos_rate": 0.0985069710966715,
+   "best_iteration": 1544,
+   "top_features": [
+    [
+     "r_pre",
+     38.6
+    ],
+    [
+     "r_rrf",
+     19.59
+    ],
+    [
+     "num_unmatched_1",
+     4.81
+    ],
+    [
+     "addr_contain",
+     4.68
+    ],
+    [
+     "x_rrf_rank",
+     4.64
+    ],
+    [
+     "num_rel",
+     3.41
+    ],
+    [
+     "num_unmatched_2",
+     3.41
+    ],
+    [
+     "name_lev",
+     3.03
+    ],
+    [
+     "name_skel_jac",
+     2.24
+    ],
+    [
+     "name_jw",
+     2.0
+    ],
+    [
+     "name_tset",
+     1.38
+    ],
+    [
+     "addr_unmatched_2",
+     1.3
+    ],
+    [
+     "alias_best",
+     1.23
+    ],
+    [
+     "name_me_21",
+     1.2
+    ],
+    [
+     "name_freq_max",
+     1.16
+    ]
+   ]
+  },
+  "m2": {
+   "rows": 3270262,
+   "pos_rate": 0.09863154695250717,
+   "best_iteration": 590,
+   "top_features": [
+    [
+     "m_excl_prob",
+     71.26
+    ],
+    [
+     "m_prob",
+     22.98
+    ],
+    [
+     "m_rank",
+     2.52
+    ],
+    [
+     "m_gap_to_best",
+     0.54
+    ],
+    [
+     "m_score_share",
+     0.36
+    ],
+    [
+     "m_best_other_source",
+     0.31
+    ],
+    [
+     "name_freq_max",
+     0.25
+    ],
+    [
+     "name_len_ratio",
+     0.24
+    ],
+    [
+     "m_n_strong",
+     0.24
+    ],
+    [
+     "x_rrf_rank",
+     0.21
+    ],
+    [
+     "addr_len_ratio",
+     0.19
+    ],
+    [
+     "x_n_cands",
+     0.12
+    ],
+    [
+     "num_unmatched_2",
+     0.09
+    ],
+    [
+     "m_n_competitors",
+     0.09
+    ],
+    [
+     "num_unmatched_1",
+     0.08
+    ]
+   ]
+  },
+  "calibration": {
+   "rows": 1960885,
+   "ece_raw": 0.00034953311021121186,
+   "ece_calibrated": 7.620562552083521e-19,
+   "reliability_raw": [
+    {
+     "bin": "[0.00,0.10)",
+     "n": 1744905,
+     "mean_p": 0.0012,
+     "frac_pos": 0.0013
+    },
+    {
+     "bin": "[0.10,0.20)",
+     "n": 10410,
+     "mean_p": 0.1437,
+     "frac_pos": 0.145
+    },
+    {
+     "bin": "[0.20,0.30)",
+     "n": 5817,
+     "mean_p": 0.246,
+     "frac_pos": 0.2512
+    },
+    {
+     "bin": "[0.30,0.40)",
+     "n": 4375,
+     "mean_p": 0.3478,
+     "frac_pos": 0.3472
+    },
+    {
+     "bin": "[0.40,0.50)",
+     "n": 3522,
+     "mean_p": 0.4489,
+     "frac_pos": 0.4463
+    },
+    {
+     "bin": "[0.50,0.60)",
+     "n": 3285,
+     "mean_p": 0.5495,
+     "frac_pos": 0.5534
+    },
+    {
+     "bin": "[0.60,0.70)",
+     "n": 3466,
+     "mean_p": 0.6508,
+     "frac_pos": 0.6151
+    },
+    {
+     "bin": "[0.70,0.80)",
+     "n": 4218,
+     "mean_p": 0.7519,
+     "frac_pos": 0.7487
+    },
+    {
+     "bin": "[0.80,0.90)",
+     "n": 6818,
+     "mean_p": 0.8555,
+     "frac_pos": 0.8485
+    },
+    {
+     "bin": "[0.90,1.00)",
+     "n": 174069,
+     "mean_p": 0.9928,
+     "frac_pos": 0.9921
+    }
+   ]
+  },
+  "seconds": 423.0
+ },
+ "headline": {
+  "per_country": {
+   "India": 0.9150869450113063,
+   "US": 0.9571235012529297
+  },
+  "loco_mean": 0.89043,
+  "test_mix": {
+   "India": 0.4675125133907133,
+   "US": 0.3827354456798788,
+   "LOCO": 0.14975204092940786
+  },
+  "reweighted": 0.927483397260764
+ },
+ "loco": {
+  "India->US": {
+   "macro_f05": 0.93534,
+   "rule": "('eum', 0.6, 0.0)",
+   "n": 120000
+  },
+  "US->India": {
+   "macro_f05": 0.84551,
+   "rule": "('eum', 1.6, 0.0)",
+   "n": 120000
+  },
+  "mean": {
+   "macro_f05": 0.89043
+  }
+ },
+ "output": {
+  "countries": {
+   "France": {
+    "pairs_scored": 12764019,
+    "ids_predicted": 822625,
+    "s1": 259452
+   },
+   "India": {
+    "pairs_scored": 27528332,
+    "ids_predicted": 2414102,
+    "s1": 809986
+   },
+   "US": {
+    "pairs_scored": 20783504,
+    "ids_predicted": 2122575,
+    "s1": 663106
+   }
+  },
+  "rule": "('eum', 0.6, 0.0)",
+  "candidate_pairs.tsv": {
+   "rows": 1732544,
+   "non_empty": 1732544,
+   "ids": 61075855
+  },
+  "matching_results.tsv": {
+   "rows": 1732544,
+   "non_empty": 1620563,
+   "ids": 5359302
+  }
+ },
+ "ablation": [
+  {
+   "phase": "0 \u2014 sparse blocking + LightGBM stack",
+   "measured on": "full partitions, held-out fold 0",
+   "India": 0.9151,
+   "US": 0.9571,
+   "LOCO": 0.89043,
+   "reweighted": 0.9275,
+   "kept": "yes \u2014 the submitted pipeline"
+  },
+  {
+   "phase": "1 \u2014 dense bi-encoder",
+   "measured on": "not run",
+   "kept": "no \u2014 see PROGRESS.md \u00a78 (AWS handover)"
+  },
+  {
+   "phase": "2 \u2014 cross-encoder",
+   "measured on": "not run",
+   "kept": "no \u2014 see PROGRESS.md \u00a78 (AWS handover)"
+  }
+ ],
+ "test_blocking": [
+  {
+   "country": "France",
+   "S1 entities": 259452,
+   "pool (S2+S3)": 1434993,
+   "candidate pairs": 12764019,
+   "avg_candidates": 49.2,
+   "reduction_ratio": 0.9999657168564937,
+   "labels": "none (test-only country)"
+  },
+  {
+   "country": "India",
+   "S1 entities": 809986,
+   "pool (S2+S3)": 4717565,
+   "candidate pairs": 27528332,
+   "avg_candidates": 33.99,
+   "reduction_ratio": 0.999992795821048,
+   "labels": "yes"
+  },
+  {
+   "country": "US",
+   "S1 entities": 663106,
+   "pool (S2+S3)": 3817031,
+   "candidate pairs": 20783504,
+   "avg_candidates": 31.34,
+   "reduction_ratio": 0.9999917887339318,
+   "labels": "yes"
+  }
+ ],
+ "validator": {
+  "command": "/Users/devyanshbhattacharya/Vs Code/ML Challenge 26/.venv/bin/python /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/utils/validate_submission.py --matching /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/output/matching_results.tsv --candidate /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/output/candidate_pairs.tsv --test-dir /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/dataset/test --check-ids",
+  "returncode": 0,
+  "passed": true,
+  "stdout": [
+   "ML Challenge 2026 \u2014 submission validator",
+   "  test dir: /Users/devyanshbhattacharya/Vs Code/ML Challenge 26/student_resource/dataset/test",
+   "  required S1 entities: 1732544",
+   "  valid S2/S3 match IDs: 9969589",
+   "  matching_results.tsv: 1732544 rows (111981 empty, 1620563 non-empty).",
+   "  candidate_pairs.tsv: 1732544 rows (0 empty, 1732544 non-empty).",
+   "",
+   "PASS \u2014 no blocking issues found. Safe to submit."
+  ],
+  "stderr": ""
+ },
+ "runtime": 15351.1,
+ "seconds": 645.0
+}
