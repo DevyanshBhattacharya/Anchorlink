@@ -66,11 +66,27 @@ class KeyBlocks:
                 key_list.append(k)
                 row_list.append(i)
         if not key_list:
-            empty_i = np.zeros(0, dtype=np.int64)
-            return cls(empty_i, np.zeros(0, dtype=np.int32), np.zeros(1, dtype=np.int64))
-        keys = np.asarray(key_list, dtype=np.int64)
-        rows = np.asarray(row_list, dtype=np.int32)
-        del key_list, row_list
+            return cls.empty()
+        return cls.from_arrays(np.asarray(key_list, dtype=np.int64),
+                              np.asarray(row_list, dtype=np.int32), max_block)
+
+    @classmethod
+    def empty(cls) -> "KeyBlocks":
+        return cls(np.zeros(0, dtype=np.int64), np.zeros(0, dtype=np.int32),
+                   np.zeros(1, dtype=np.int64))
+
+    @classmethod
+    def from_arrays(cls, keys: np.ndarray, rows: np.ndarray,
+                    max_block: int = MAX_BLOCK) -> "KeyBlocks":
+        """Build the capped, sorted structure straight from (key, row) arrays.
+
+        Split out of :meth:`build` because the MinHash bands need exactly this —
+        a capped hash-to-rows table — and there is no reason for two of them.
+        """
+        if not len(keys):
+            return cls.empty()
+        keys = np.asarray(keys, dtype=np.int64)
+        rows = np.asarray(rows, dtype=np.int32)
         order = np.argsort(keys, kind="stable")
         keys, rows = keys[order], rows[order]
         uniq, starts_idx, counts = np.unique(keys, return_index=True, return_counts=True)
