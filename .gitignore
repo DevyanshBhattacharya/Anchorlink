@@ -1,28 +1,103 @@
-# NOTE: .gitignore has no trailing comments — a pattern runs to end of line.
-# Every comment here is on its own line, on purpose.
+# ============================================================================
+# .gitignore has NO trailing comments — a pattern runs to the end of the line.
+# "work/   # caches" would be read as the literal pattern "work/   # caches"
+# and silently ignore nothing. Every comment here is on its own line.
+# ============================================================================
 
-# The challenge data (2.3 GB). Download separately; see SETUP.md.
+# ---------------------------------------------------------------- the data
+# 2.3 GB, downloaded separately. See SETUP.md.
 student_resource/
 
-# Generated artefacts, all rebuilt by ./run_all.sh
-# work/ reaches ~40 GB and output/ ~900 MB
+# ---------------------------------------------------- generated artefacts
+# All of this is rebuilt by ./run_all.sh. work/ reaches ~40 GB, output/ ~900 MB.
 work/
 output/
-output_v1/
-
-# The packaged submission (~380 MB)
+output_*/
 *.zip
 
-# Environment
+# Generated copies of the benchmark. results/BENCHMARK.md is the tracked one;
+# this copy is made at package time so it lands inside the submission zip.
+business_entity_resolution/BENCHMARK.md
+
+# ------------------------------------------------------------- data blobs
+# Nothing of this kind belongs in the repo: it is either input data or output.
+*.tsv
+*.csv
+*.parquet
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.onnx
+*.gz
+*.arrow
+
+# ------------------------------------------------------------------- logs
+*.log
+nohup.out
+
+# ------------------------------------------------------------ environment
 .venv/
+venv/
+env/
+.python-version
+.env
+.env.*
+
+# ---------------------------------------------------------------- Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.ipynb_checkpoints/
 
-# macOS
+# ------------------------------------------------------- model / hub caches
+.cache/
+hf_cache/
+huggingface/
+*.ckpt
+
+# --------------------------------------------------------------- scratch
+scratch/
+tmp/
+temp/
+notebooks/scratch/
+
+# ------------------------------------------------------------------- IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# -------------------------------------------------------------------- OS
 .DS_Store
+._*
+Thumbs.db
+desktop.ini
 
-# Source PDFs: large, and not ours to redistribute
+# ------------------------------------------------------------------ docs
+# The source PDFs are large and not ours to redistribute.
 *.pdf
 
-# results/ IS committed on purpose: it is small and it is the evidence.
+# ============================================================================
+# Deliberately KEPT, despite matching a rule above or looking generated:
+#   results/            small, and it is the evidence behind every number
+#   tests/fixtures/     the synthetic-dataset generator, not a dataset
+# ============================================================================
+!results/
+!results/**
