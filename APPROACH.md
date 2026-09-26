@@ -147,7 +147,7 @@ Ranks are fused with **reciprocal-rank fusion** (`1/(60 + rank)`, summed across
 retrievers), which needs no score calibration between indexes that are not comparable.
 
 **Key blocks** are unioned in on top: two exact keys per record — *(house number, name
-root)* and *(sorted core-name skeleton)* — each capped at 50 records, because a key that
+root)* and *(sorted core-name skeleton)* — each capped at 150 records, because a key that
 matches 5,000 records carries no information. They catch the case ranked retrieval misses
 entirely: text corrupted past recognition (`Apex Digital` → `Apex Didt1`) while the number
 and the name root survive. Keys are stored as sorted int64 hash arrays rather than a dict:
@@ -210,7 +210,7 @@ reported per side and the model decides what it costs.
 Missing fields are never imputed — they become NaN plus a flag, and LightGBM routes NaN
 natively.
 
-### The 52 columns, by group
+### The 62 columns, by group
 
 | # | group | what is in it |
 | --- | --- | --- |
@@ -219,9 +219,18 @@ natively.
 | 21–22 | **flags** | domain-style name, native script per side |
 | 23–30 | **address** | missing flags; IDF-weighted **containment** with unmatched weight per side; character 3-gram Jaccard; Monge–Elkan over alphabetic tokens with abbreviation handling; token-count ratio; locality conflict (rare alphabetic tokens on one side only) |
 | 31–35 | **house numbers** | relation class, `log(1+min|Δ|)`, shared count, unmatched share per side |
-| 36–47 | **retrieval** | each retriever's score and rank, key-hit flag, RRF, how many retrievers agreed, the pre-ranker probability |
-| 48–52 | **candidate list** | agreement with this S1's best candidate from the *other* source (name and address), rank and gap within the list by RRF, list size |
-| +9 | **meta, added by M2** | M1's probability, rank, gap to best, score share, count of strong candidates, exclusivity-corrected probability, claim rank, competitor count, best score from the other source |
+| 36–37 | **cross-field** | IDF mass of one record's *name* found in the other's *address*, both directions. Measured at 0.00% of model gain — the mechanism is real but too rare to pay, and these are the first columns to drop |
+| 38–39 | **name rarity** | IDF-weighted Jaccard over the **full** token sets; the largest IDF among shared non-affix tokens, normalised by the country's IDF ceiling so it transfers to an unseen country |
+| 40 | **phonetics** | normalised edit distance on the romanised consonant skeleton. Gram Jaccard is order-free and cannot separate a transposition from a near-match; this is **M1's 7th most important feature of 62** |
+| 41–44 | **administrative + address rarity** | address-tail Jaccard and tail-against-whole-address coverage (both 0.00% gain — redundant with IDF address containment); shared 5–6 digit ZIP/PIN by length alone; largest shared address IDF |
+| 45 | **address skeleton** | 3-gram Jaccard of the address consonant skeleton, for the reason the name has one — a Devanagari address shares no token with its romanisation |
+| 46–57 | **retrieval** | each retriever's score and rank, key-hit flag, RRF, how many retrievers agreed, the pre-ranker probability |
+| 58–62 | **candidate list** | agreement with this S1's best candidate from the *other* source (name and address), rank and gap within the list, list size |
+| +15 | **meta, added by M2** | M1's probability, rank, gap to best, score share, count of strong candidates, exclusivity-corrected probability, claim rank, competitor count, best score from the other source — plus the **shape of the list**: relative gap to the best (M2's 3rd most important of 77), step-drop to the runner-up, standard deviation, probability sum, rank within the same source, and how much probability exclusivity took away |
+
+The list-shape columns exist because a crowded candidate list is not evidence against the
+candidate at the top of it: without them M2 sees "eight close competitors" and cannot tell
+a genuine ambiguity from a chain of identically named branches.
 
 An abbreviation counts as a partial match (0.8), never equality — the test that fires on
 `rd`~`road` and `bd`~`boulevard` also fires on `rd`~`reed`.
@@ -402,16 +411,37 @@ leave-one-country-out fold is the one that decides, because it is the France pro
 
 ## Where the score actually comes from
 
-| country | macro F₀.₅ | precision | recall | singleton accuracy |
-| --- | --- | --- | --- | --- |
-| India | 0.9151 | 0.974 | 0.838 | 0.896 |
-| US | 0.9571 | 0.988 | 0.909 | 0.938 |
+Held-out fold 0, 120,000 entities per country, queries searching the full S2/S3 pool.
 
-Precision is already near the ceiling; **recall is the binding constraint**, and most of
-what recall loses is lost in blocking, not in matching. India reaches 0.9151 against a
-blocking ceiling of 0.9601 — so about a third of the remaining gap is the matcher and two
-thirds is candidates that were never retrieved. That is exactly what the dense retriever
-in Phase 1 is aimed at, and it is why Phase 1 is the first thing to run if a GPU appears.
+| country | macro F₀.₅ | precision | recall | candidate ceiling |
+| --- | --- | --- | --- | --- |
+| India | 0.9340 | 0.985 | 0.861 | 0.9649 |
+| US | 0.9613 | 0.990 | 0.914 | 0.9880 |
+
+Leave-one-country-out, the only honest proxy for France: India→US 0.9375, US→India 0.8437,
+mean **0.8906**. Test-mix weighted (0.4675 India / 0.3827 US / 0.1498 LOCO, derived from
+`test_source1.tsv` rather than hard-coded): **0.9380**.
+
+How that was reached, against the previously submitted configuration:
+
+| | India | US | LOCO mean | reweighted |
+| --- | --- | --- | --- | --- |
+| feature set v1 | 0.9151 | 0.9571 | 0.8904 | 0.9275 |
+| feature set v2 | 0.9246 | 0.9591 | 0.8860 | 0.9320 |
+| **+ 10 pair and 6 meta columns, `eps` 0.002→0.001** | 0.9321 | 0.9610 | 0.8895 | 0.9368 |
+| **+ selectivity-ordered key blocks** | **0.9340** | **0.9613** | **0.8906** | **0.9380** |
+
+Precision is near the ceiling; **recall is the binding constraint**. The split between the
+two causes has moved, and it is worth stating accurately because it decides what to work
+on next: India now reaches 0.9340 against a candidate ceiling of 0.9649, so the matcher
+converts **96.8%** of the headroom it is given, and roughly *half* the remaining loss is
+candidates that were never retrieved rather than two thirds. Further feature work is
+therefore bounded — a perfect matcher on the unpruned union scores about 0.975 reweighted —
+and the next real gain is in candidate generation. That is what the dense retriever in
+Phase 1 is aimed at, and it is why Phase 1 is the first thing to run if a GPU appears.
+
+The per-country figures above tune the decision rule per country. The submission applies
+**one** rule to all three countries, which costs about 0.0006; see the appendix.
 
 By cluster size:
 
@@ -431,7 +461,12 @@ evidence from a sibling record.
 ## Appendix — the actual configuration
 
 Every number below is the value in the code, not a description of it. Config id:
-`b3_k30_u80_df1_qb60k_key20_pr60`, feature set version 2.
+`b3_k30_u80_df1_qb60k_key20_kb150_ks_pr120-15-0.001`, feature set version 3.
+
+The id has two halves on purpose. Everything before `_pr` decides the **raw union** and
+everything after it decides the **pruning** that turns the union into the set the matcher
+scores, so a pruning sweep reuses cached retrieval instead of repeating an hour of it per
+country.
 
 ### Retrieval
 
@@ -453,7 +488,17 @@ The skeleton's cap is ten times larger on purpose: that view has only ~11k possi
 | RRF constant *k* | 60 |
 | query budget (postings visited) | 60,000 |
 | max query terms | 96 |
-| key blocks per query / cap per key | 20 / 50 |
+| key blocks per query / cap per key | 20 / 150 |
+| key hits kept, when a query has more than 20 | the **most selective keys'** — see below |
+
+**Key hits are ordered by block size, not by pool index.** Hits used to come back in pool
+order and the caller kept the first twenty with `np.unique`, *which sorts* — so a query
+matching a 3-record key and a 140-record key kept twenty rows chosen by lowest pool index
+rather than the three precise ones. Fixing that, and only then raising the cap, is worth
+**+0.0152 pair recall, +0.0300 full-cluster recall and +0.0073 of candidate ceiling at an
+identical candidate count** on the standard benchmark. It is also why raising the cap on
+its own would have made recall *worse*: a bigger block crowds a precise hit out with its
+own low-numbered rows.
 
 ### Pre-ranker
 
@@ -461,8 +506,13 @@ LightGBM on the **11 retrieval columns only** — each retriever's score and ran
 RRF, retriever-agreement count. `learning_rate 0.08`, `num_leaves 63`,
 `min_data_in_leaf 500`, monotone constraints on.
 
-Pruning: keep everything with `p ≥ 0.002`, never fewer than **15**, never more than **60**
-per S1. That lands at ~32 candidates per entity.
+Pruning: keep everything with `p ≥ 0.0010`, never fewer than **15**, never more than **120**
+per S1, applied per source. That lands at ~41 candidates per entity.
+
+`eps` is the knob that binds, and `max` is not: measured on a held-out fold, 60 / 80 / 120
+per S1 give **bit-identical** candidate sets, because the average list is far shorter than
+the cap and the threshold decides its length. Halving `eps` from 0.002 lifts India's
+candidate ceiling 0.9595 → 0.9632 for 1.6x the pairs; 0.0005 would give 0.9672 for 2.8x.
 
 ### Matcher (M1 and M2)
 
@@ -473,15 +523,25 @@ lambda_l2 1.0             monotone_constraints_method "advanced"
 early stopping 100 rounds on a 15% holdout taken by whole S1 groups
 ```
 
-M1 sees 52 columns, M2 sees those 52 plus 9 meta columns. Objective is **log-loss, never
+M1 sees 62 columns, M2 sees those 62 plus 15 meta columns. Objective is **log-loss, never
 LambdaRank** — the decision layer needs probabilities, not an ordering.
 
 ### Decision
 
-β² = 0.25. The rule search sweeps thresholds `0.30 … 0.95` step 0.025 and expected-F
-temperatures `{0.6, 0.8, 1.0, 1.25, 1.6}`, and takes whichever scores best on the
-test-mix-weighted validation. Our run chose the **expected-F rule at T = 0.6–0.8**, not a
-threshold.
+β² = 0.25. The rule search sweeps thresholds `0.30 … 0.95` step 0.025, expected-F
+temperatures `{0.35, 0.45, 0.55, 0.6, 0.7, 0.8, 1.0, 1.25, 1.6}` and candidate-miss
+probabilities `{0, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40}`, and takes whichever scores
+best on the test-mix-weighted validation. **One rule is applied to every country**,
+including France, which has no labels to tune on.
+
+`miss_prob` is the probability that blocking dropped a true match, which raises the
+true-set size the rule budgets for and so makes one more predicted candidate cheaper. It
+is swept because the candidate list is *not* complete — India's pruned full-cluster recall
+is 0.775. On the previous, shorter candidate list the whole sweep was worth **+0.00002**
+over 180 configurations; with a longer list every fold now selects a non-zero value, so it
+only pays in combination. The two sweeps together cost one pass per temperature rather
+than one per pair, because the expected-F computation splits into two halves that
+`miss_prob` merely mixes and neither depends on it.
 
 ### Training sizes, per country
 

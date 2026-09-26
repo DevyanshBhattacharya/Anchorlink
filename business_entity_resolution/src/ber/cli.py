@@ -234,7 +234,8 @@ def cmd_package(args) -> None:
         shutil.copy2(doc, staging / "Documentation_template.md")
     else:
         raise SystemExit(f"{doc} not found — fill in the methodology template first")
-    for extra in ("PROGRESS.md", "RESULTS.md", "run_tests.sh", "finish.sh"):
+    for extra in ("PROGRESS.md", "RESULTS.md", "APPROACH.md", "EXPERIMENTS.md",
+                  "run_tests.sh", "finish.sh"):
         if (root / extra).is_file():
             shutil.copy2(root / extra, dest / extra)
     bench = config.REPORT_DIR / "final_report.md"

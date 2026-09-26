@@ -114,7 +114,70 @@ Held-out fold 0, full-pool retrieval, 4,000 queries per country.
 | date | change | val F0.5 US | val F0.5 India | LOCO | reweighted |
 | --- | --- | --- | --- | --- | --- |
 | 2026-09-25 | Phase 0, 4k S1/country training sample (proving run) | 0.9495 | 0.8982 | n/a | 0.9213 |
-| _(full run in progress)_ | | | | | |
+| 2026-09-25 | full run, feature set v1 | 0.9571 | 0.9151 | 0.8904 | 0.9275 |
+| 2026-09-25 | feature set v2 (one-sided token counts, full-name skeleton) | 0.9591 | 0.9246 | 0.8860 | 0.9320 |
+| 2026-09-26 | **v3**: 10 pair + 6 meta columns, `eps` 0.002 → 0.001 | 0.9610 | 0.9321 | 0.8895 | 0.9368 |
+| 2026-09-26 | **v4**: + selectivity-ordered key blocks, cap 150 | **0.9613** | **0.9340** | **0.8906** | **0.9380** |
+
+Per-country tuned rules. Under the single rule the submission actually applies to all three
+countries, v3 reads 0.9362 against v2's 0.9320.
+
+## Pruning threshold — `eps` binds, `prerank_max` does not
+
+Cached raw union, held-out fold 0, full-pool retrieval. `max` at 60 / 80 / 120 gives
+**bit-identical** candidate sets: the average list is far shorter than the cap, so the
+threshold is what decides its length.
+
+| max / min / eps | India cand/S1 | India PR | India FCR | India ceiling | US ceiling |
+| --- | --- | --- | --- | --- | --- |
+| 60 / 15 / 0.002 (submitted) | 29.4 | 0.9003 | 0.7492 | 0.9595 | 0.9861 |
+| 120 / 15 / 0.002 | 29.4 | 0.9003 | 0.7492 | 0.9595 | 0.9861 |
+| **120 / 15 / 0.001 (adopted)** | 47.2 | 0.9090 | 0.7687 | **0.9632** | **0.9878** |
+| 120 / 15 / 0.0005 | 81.6 | 0.9181 | 0.7893 | 0.9672 | 0.9893 |
+| raw union, no pruning | 159.8 | 0.9282 | 0.8133 | 0.9715 | 0.9909 |
+
+## Key blocks — ordering the hits by selectivity, and a fifth retriever
+
+4,000 held-out fold-0 India queries against the whole 4,133,346-record S2+S3 pool, union
+capped at 80 per source, so every row costs the same number of candidates.
+
+| combination | cand/S1 | PR | FCR | ceiling |
+| --- | --- | --- | --- | --- |
+| 4 views, no keys | 159.2 | 0.9196 | 0.7955 | 0.9656 |
+| 4 views + keys, pool order, cap 50 | 159.8 | 0.9209 | 0.7979 | 0.9674 |
+| **4 views + keys, selective, cap 150** | 159.7 | **0.9361** | **0.8279** | **0.9747** |
+| 4 views + LSH + keys, pool order | 160.0 | 0.9120 | 0.7756 | 0.9630 |
+| 4 views + LSH + keys, selective | 160.0 | 0.9271 | 0.8048 | 0.9703 |
+| banded MinHash (LSH) alone | 59.8 | 0.7348 | 0.4217 | 0.8770 |
+
+**Selectivity ordering: +0.0073 of ceiling at an identical candidate count and identical
+cost.** Hits used to come back in pool order and the caller kept the first twenty with
+`np.unique`, which *sorts* — so a query matching a 3-record key and a 140-record key kept
+twenty rows chosen by lowest pool index. It is also why raising the cap alone would have
+hurt.
+
+**MinHash / LSH: rejected.** It lowers the ceiling. The argument for it — LSH is rank-free,
+so a true match at cosine rank 200 still collides — is sound in isolation and wrong at a
+fixed candidate budget: a fifth view displaces candidates rather than adding them, and LSH
+alone reaches 0.7348 pair recall against name+address's 0.89. It is cheap and correct
+(75,668 records/s to sign, **0.04 s/1k queries**, sixteen times less than the skeleton
+view) and stays in the tree behind its config, off.
+
+## Decision layer — exhausted
+
+180 configurations on the v2 stack: 9 temperatures x 10 candidate-miss probabilities x 2
+countries, reusing cached scores.
+
+| | India | US | reweighted (India+US) |
+| --- | --- | --- | --- |
+| baseline `T=0.6, miss=0` | 0.92464 | 0.95907 | 0.94014 |
+| best of all 180 | 0.92477 | 0.95909 | **0.94016** |
+
+**+0.00002.** India spans 0.9239–0.9248 across every temperature from 0.35 to 1.25. This
+also bounds exact F-measure maximisation under dependency: the whole decision-rule family
+spans ~0.002 here, so a better solver inside it cannot be worth more than that. With the
+longer v3/v4 candidate list every fold does select a non-zero `miss_prob`, so the knob pays
+only in combination.
 
 ## Phase 1 — dense bi-encoder, code-proving run
 
