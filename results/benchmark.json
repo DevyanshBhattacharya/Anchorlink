@@ -14,12 +14,12 @@
   },
   {
    "n": 120000,
-   "pair_recall": 0.9021076765037734,
-   "full_cluster_recall": 0.7536854928408749,
-   "avg_candidates": 33.75098333333333,
-   "f05_ceiling": 0.9600798121148664,
-   "candidate_pairs": 4050118,
-   "reduction_ratio": 0.9999918344645395,
+   "pair_recall": 0.9090939709529893,
+   "full_cluster_recall": 0.7689747709256546,
+   "avg_candidates": 47.613125,
+   "f05_ceiling": 0.9632038081717035,
+   "candidate_pairs": 5713575,
+   "reduction_ratio": 0.9999884807308655,
    "pool_size": 4133346,
    "country": "India",
    "stage": "pre-ranked"
@@ -38,12 +38,12 @@
   },
   {
    "n": 120000,
-   "pair_recall": 0.9611738257534773,
-   "full_cluster_recall": 0.8831466417548715,
-   "avg_candidates": 31.599783333333335,
-   "f05_ceiling": 0.9865603222385281,
-   "candidate_pairs": 3791974,
-   "reduction_ratio": 0.9999948924467443,
+   "pair_recall": 0.9644486120628509,
+   "full_cluster_recall": 0.8919333374461297,
+   "avg_candidates": 41.99288333333333,
+   "f05_ceiling": 0.9877667140124785,
+   "candidate_pairs": 5039146,
+   "reduction_ratio": 0.999993212583589,
    "pool_size": 6186873,
    "country": "US",
    "stage": "pre-ranked"
@@ -51,299 +51,299 @@
  ],
  "matching": {
   "India": {
-   "macro_f05": 0.9150869450113063,
+   "macro_f05": 0.9312828816068648,
    "n": 120000,
-   "micro_precision": 0.974421624768398,
-   "micro_recall": 0.8375734655532862,
-   "pred_ids": 357294,
+   "micro_precision": 0.9824974774482499,
+   "micro_recall": 0.8597015428066909,
+   "pred_ids": 363719,
    "true_ids": 415671,
-   "tp": 348155,
+   "tp": 357353,
    "n_singleton": 6718,
-   "singleton_accuracy": 0.8961000297707651,
-   "avg_pred_size": 2.97745,
-   "rule": "('eum', 0.6, 0.0)"
+   "singleton_accuracy": 0.914855611789223,
+   "avg_pred_size": 3.0309916666666665,
+   "rule": "('eum', 0.8, 0.4)"
   },
   "US": {
-   "macro_f05": 0.9571235012529297,
+   "macro_f05": 0.960382973008905,
    "n": 120000,
-   "micro_precision": 0.9878923930882368,
-   "micro_recall": 0.9089070821461632,
-   "pred_ids": 382652,
+   "micro_precision": 0.9878392691131419,
+   "micro_recall": 0.9171926281242111,
+   "pred_ids": 386161,
    "true_ids": 415905,
-   "tp": 378019,
+   "tp": 381465,
    "n_singleton": 6533,
-   "singleton_accuracy": 0.9380070411755702,
-   "avg_pred_size": 3.1887666666666665,
-   "rule": "('eum', 0.6, 0.0)"
+   "singleton_accuracy": 0.9271391397520282,
+   "avg_pred_size": 3.218008333333333,
+   "rule": "('eum', 0.8, 0.4)"
   }
  },
  "decision": {
   "India": [
    {
     "probabilities": "m1_only",
-    "best_threshold": 0.6,
-    "F0.5 @ tuned threshold": 0.90909,
-    "F0.5 @ expected-F": 0.91084,
-    "expected-F temperature": 1.0,
-    "best rule": "('eum', 1.0, 0.0)",
-    "F0.5": 0.91084
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.92615,
+    "F0.5 @ expected-F": 0.92665,
+    "expected-F temperature": 0.8,
+    "best rule": "('eum', 0.8, 0.0)",
+    "F0.5": 0.92665
    },
    {
     "probabilities": "m1_only_excl",
     "best_threshold": 0.6,
-    "F0.5 @ tuned threshold": 0.91064,
-    "F0.5 @ expected-F": 0.91222,
+    "F0.5 @ tuned threshold": 0.92785,
+    "F0.5 @ expected-F": 0.92828,
     "expected-F temperature": 0.8,
-    "best rule": "('eum', 0.8, 0.0)",
-    "F0.5": 0.91222
+    "best rule": "('eum', 0.8, 0.05)",
+    "F0.5": 0.92828
    },
    {
     "probabilities": "m2_raw",
-    "best_threshold": 0.6,
-    "F0.5 @ tuned threshold": 0.91329,
-    "F0.5 @ expected-F": 0.91548,
-    "expected-F temperature": 1.0,
-    "best rule": "('eum', 1.0, 0.0)",
-    "F0.5": 0.91548
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.92984,
+    "F0.5 @ expected-F": 0.93101,
+    "expected-F temperature": 0.8,
+    "best rule": "('eum', 0.8, 0.0)",
+    "F0.5": 0.93101
    },
    {
     "probabilities": "m2_calibrated",
-    "best_threshold": 0.6,
-    "F0.5 @ tuned threshold": 0.91309,
-    "F0.5 @ expected-F": 0.91546,
-    "expected-F temperature": 1.0,
-    "best rule": "('eum', 1.0, 0.0)",
-    "F0.5": 0.91546
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.92975,
+    "F0.5 @ expected-F": 0.931,
+    "expected-F temperature": 0.8,
+    "best rule": "('eum', 0.8, 0.25)",
+    "F0.5": 0.931
    },
    {
     "probabilities": "m2_calibrated_excl",
-    "best_threshold": 0.6,
-    "F0.5 @ tuned threshold": 0.91318,
-    "F0.5 @ expected-F": 0.91541,
-    "expected-F temperature": 1.0,
-    "best rule": "('eum', 1.0, 0.0)",
-    "F0.5": 0.91541
+    "best_threshold": 0.7,
+    "F0.5 @ tuned threshold": 0.92979,
+    "F0.5 @ expected-F": 0.93095,
+    "expected-F temperature": 0.8,
+    "best rule": "('eum', 0.8, 0.4)",
+    "F0.5": 0.93095
    },
    {
     "probabilities": "m2_raw_excl",
-    "best_threshold": 0.6,
-    "F0.5 @ tuned threshold": 0.91344,
-    "F0.5 @ expected-F": 0.91548,
-    "expected-F temperature": 1.0,
-    "best rule": "('eum', 1.0, 0.0)",
-    "F0.5": 0.91548
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.92983,
+    "F0.5 @ expected-F": 0.93106,
+    "expected-F temperature": 0.8,
+    "best rule": "('eum', 0.8, 0.0)",
+    "F0.5": 0.93106
    }
   ],
   "US": [
    {
     "probabilities": "m1_only",
-    "best_threshold": 0.65,
-    "F0.5 @ tuned threshold": 0.95356,
-    "F0.5 @ expected-F": 0.95344,
+    "best_threshold": 0.7,
+    "F0.5 @ tuned threshold": 0.95682,
+    "F0.5 @ expected-F": 0.95697,
     "expected-F temperature": 0.8,
-    "best rule": "('threshold', 0.65)",
-    "F0.5": 0.95356
+    "best rule": "('eum', 0.8, 0.2)",
+    "F0.5": 0.95697
    },
    {
     "probabilities": "m1_only_excl",
     "best_threshold": 0.65,
-    "F0.5 @ tuned threshold": 0.95461,
-    "F0.5 @ expected-F": 0.95456,
+    "F0.5 @ tuned threshold": 0.95805,
+    "F0.5 @ expected-F": 0.95829,
     "expected-F temperature": 0.6,
-    "best rule": "('threshold', 0.65)",
-    "F0.5": 0.95461
+    "best rule": "('eum', 0.6, 0.0)",
+    "F0.5": 0.95829
    },
    {
     "probabilities": "m2_raw",
-    "best_threshold": 0.65,
-    "F0.5 @ tuned threshold": 0.95613,
-    "F0.5 @ expected-F": 0.95659,
-    "expected-F temperature": 0.8,
-    "best rule": "('eum', 0.8, 0.0)",
-    "F0.5": 0.95659
+    "best_threshold": 0.7,
+    "F0.5 @ tuned threshold": 0.95938,
+    "F0.5 @ expected-F": 0.96073,
+    "expected-F temperature": 1.0,
+    "best rule": "('eum', 1.0, 0.0)",
+    "F0.5": 0.96073
    },
    {
     "probabilities": "m2_calibrated",
-    "best_threshold": 0.6,
-    "F0.5 @ tuned threshold": 0.95613,
-    "F0.5 @ expected-F": 0.95669,
-    "expected-F temperature": 0.6,
-    "best rule": "('eum', 0.6, 0.0)",
-    "F0.5": 0.95669
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.95937,
+    "F0.5 @ expected-F": 0.9607,
+    "expected-F temperature": 0.7,
+    "best rule": "('eum', 0.7, 0.0)",
+    "F0.5": 0.9607
    },
    {
     "probabilities": "m2_calibrated_excl",
-    "best_threshold": 0.6,
-    "F0.5 @ tuned threshold": 0.95618,
-    "F0.5 @ expected-F": 0.95682,
-    "expected-F temperature": 0.6,
-    "best rule": "('eum', 0.6, 0.0)",
-    "F0.5": 0.95682
+    "best_threshold": 0.65,
+    "F0.5 @ tuned threshold": 0.95941,
+    "F0.5 @ expected-F": 0.9607,
+    "expected-F temperature": 0.7,
+    "best rule": "('eum', 0.7, 0.0)",
+    "F0.5": 0.9607
    },
    {
     "probabilities": "m2_raw_excl",
-    "best_threshold": 0.65,
-    "F0.5 @ tuned threshold": 0.95618,
-    "F0.5 @ expected-F": 0.9567,
-    "expected-F temperature": 0.6,
-    "best rule": "('eum', 0.6, 0.0)",
-    "F0.5": 0.9567
+    "best_threshold": 0.7,
+    "F0.5 @ tuned threshold": 0.95938,
+    "F0.5 @ expected-F": 0.96073,
+    "expected-F temperature": 1.0,
+    "best rule": "('eum', 1.0, 0.0)",
+    "F0.5": 0.96073
    }
   ]
  },
  "errors": {
   "India": {
    "false_positives": {
-    "n": 9139,
+    "n": 6366,
     "patterns": [
      {
       "pattern": "name differs by a legal form or one token",
-      "n": 3185,
-      "share": 0.3485
-     },
-     {
-      "pattern": "no house number on one side",
-      "n": 1893,
-      "share": 0.2071
+      "n": 2286,
+      "share": 0.3591
      },
      {
       "pattern": "name partly overlapping",
-      "n": 1760,
-      "share": 0.1926
+      "n": 1273,
+      "share": 0.2
      },
      {
-      "pattern": "native-script name",
-      "n": 780,
-      "share": 0.0853
+      "pattern": "no house number on one side",
+      "n": 1181,
+      "share": 0.1855
      },
      {
       "pattern": "missing address on one side",
-      "n": 490,
-      "share": 0.0536
+      "n": 389,
+      "share": 0.0611
      },
      {
       "pattern": "no shared name token",
-      "n": 351,
-      "share": 0.0384
+      "n": 387,
+      "share": 0.0608
+     },
+     {
+      "pattern": "native-script name",
+      "n": 364,
+      "share": 0.0572
      },
      {
       "pattern": "house numbers unrelated",
-      "n": 226,
-      "share": 0.0247
+      "n": 127,
+      "share": 0.0199
      },
      {
-      "pattern": "house number truncated (1447 -> 447)",
-      "n": 150,
-      "share": 0.0164
+      "pattern": "domain-style name",
+      "n": 124,
+      "share": 0.0195
      }
     ],
     "examples": [
      {
-      "s1": "S1-499359562",
-      "cand": "S2-83808461",
+      "s1": "S1-808761390",
+      "cand": "S2-882575285",
+      "p": 1.0,
+      "pattern": "name partly overlapping",
+      "s1_name": "W1 North W2 Private Limited",
+      "s1_addr": "W3, 57-W4, W5 W6 Street, W7 Colony, W8 W9, W1, W10 W11, W1, W1 North, W12 Floor, W10 W11",
+      "cand_name": "W1 north W2 pvt. ltd.",
+      "cand_addr": "57 , 57 W13, W6 STREET, W14 W9, W1 NORTH, W10 W11"
+     },
+     {
+      "s1": "S1-562393215",
+      "cand": "S2-736324491",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "W1 W2 Private Limited",
-      "s1_addr": "W3 W4 Tower W5 Floor 36/2342 W6-3 (W7) W8 W9 W10 W11, W10, W12",
-      "cand_name": "W1 W2 Limited",
-      "cand_addr": "W3 W4 TOWER W5 FLOOR 36/2342 W6-3 (W7) W8 W9 W10 W11, W10, W12"
+      "s1_name": "W1 W2",
+      "s1_addr": "No. 577/2, W3 W4 Building W5 Road, W6 Complex, W7, W8, W9 W10",
+      "cand_name": "W11  W2",
+      "cand_addr": "W12.NO 577/2 , W3 W4 BUILDING W5 ROAD, W6 COMPLEX, W7, W13"
      },
      {
-      "s1": "S1-394185437",
-      "cand": "S2-514854666",
+      "s1": "S1-343160444",
+      "cand": "S2-311183051",
       "p": 1.0,
-      "pattern": "name differs by a legal form or one token",
+      "pattern": "domain-style name",
       "s1_name": "W1 W2 Private Limited",
-      "s1_addr": "W3 80 W4 Nagar W5, W5, W6",
-      "cand_name": "W1  W2 Limited",
-      "cand_addr": "W3 80 W4 NAGAR W5, W5, W6"
+      "s1_addr": "No.7, W3 W4 W5 Street, W6, W7, W8 W9",
+      "cand_name": "W10 W2 PRIVATE | W11.W10.W12",
+      "cand_addr": "NO.7, W3 W4 W5 STREET, W6, W7, W8 W9"
      },
      {
-      "s1": "S1-32881467",
-      "cand": "S2-442883886",
+      "s1": "S1-662373997",
+      "cand": "S2-206963484",
       "p": 1.0,
-      "pattern": "name differs by a legal form or one token",
-      "s1_name": "W1 W2 Limited",
-      "s1_addr": "W3 Floor, W4 W5, 3/1, W6 W7 Road, -Opp. W8, W9 Main Road, W1, W1, W10 W11",
-      "cand_name": "W1 W2",
-      "cand_addr": "W3 FLOOR, W4 W5, 3/1, W6 W7 ROAD, W1, W10 W11"
-     },
-     {
-      "s1": "S1-824167956",
-      "cand": "S3-769162895",
-      "p": 0.9999,
-      "pattern": "name differs by a legal form or one token",
+      "pattern": "domain-style name",
       "s1_name": "W1 W2 Private Limited",
-      "s1_addr": "23/1 W3 W4 W5, W6, W7, West W8",
-      "cand_name": "W1 W2 Limited",
-      "cand_addr": "23/1 W3 W4 W5, W7, W9 Street, W10"
+      "s1_addr": "1711/10, W3 W4 Colony, W5 No. 4, W6 Road, W7, W8",
+      "cand_name": "W9 W2 Private | W10.W11.W12",
+      "cand_addr": "1711/10, W3 W4 COLONY, W5 NO. 4, W6 ROAD, W7, W8"
      },
      {
-      "s1": "S1-876713311",
-      "cand": "S2-846129294",
-      "p": 0.9999,
-      "pattern": "name differs by a legal form or one token",
-      "s1_name": "W1 W2 W3",
-      "s1_addr": "House No 1 W4 W5 W6 Near W7 W8 W9 W10 W11 W12, W12, New W12, W12",
-      "cand_name": "W1 W2 W13 LLP",
-      "cand_addr": "HOUSE NO 1 W4 W5 W6 NEAR W7 W8 W9 W10 W11 W12, W12, W14"
+      "s1": "S1-960236885",
+      "cand": "S3-55213029",
+      "p": 1.0,
+      "pattern": "identical name, same number",
+      "s1_name": "W1 W2 W3 Private Limited",
+      "s1_addr": "West W4, W5, 29/1 W6 W7 Street Flat No W8, W5, W9, W10 W11",
+      "cand_name": "W1 W2 W3 W2 Private Limited",
+      "cand_addr": "Door No 53 W10 W11, 29/1 W6 W7 Street Flat No W8, W5, W9, W5, W12"
      }
     ]
    },
    "false_negatives": {
-    "n": 26825,
+    "n": 20531,
     "patterns": [
      {
       "pattern": "name differs by a legal form or one token",
-      "n": 5985,
-      "share": 0.2231
-     },
-     {
-      "pattern": "no shared name token",
-      "n": 4283,
-      "share": 0.1597
+      "n": 4623,
+      "share": 0.2252
      },
      {
       "pattern": "missing address on one side",
-      "n": 4223,
-      "share": 0.1574
+      "n": 3918,
+      "share": 0.1908
+     },
+     {
+      "pattern": "no shared name token",
+      "n": 3182,
+      "share": 0.155
      },
      {
       "pattern": "no house number on one side",
-      "n": 3840,
-      "share": 0.1432
-     },
-     {
-      "pattern": "native-script name",
-      "n": 2847,
-      "share": 0.1061
+      "n": 2972,
+      "share": 0.1448
      },
      {
       "pattern": "name partly overlapping",
-      "n": 1634,
-      "share": 0.0609
+      "n": 1990,
+      "share": 0.0969
+     },
+     {
+      "pattern": "native-script name",
+      "n": 1475,
+      "share": 0.0718
      },
      {
       "pattern": "house numbers unrelated",
-      "n": 1109,
-      "share": 0.0413
+      "n": 747,
+      "share": 0.0364
      },
      {
       "pattern": "house numbers differ by 1-2 (same street, next door)",
-      "n": 833,
-      "share": 0.0311
+      "n": 532,
+      "share": 0.0259
      }
     ],
     "examples": [
      {
-      "s1": "S1-428012519",
-      "cand": "S3-720474325",
+      "s1": "S1-325575199",
+      "cand": "S3-582705734",
       "p": 0.0,
       "pattern": "house numbers differ by 3-20 (same street, a few doors away)",
       "s1_name": "W1 W2 Private Limited",
-      "s1_addr": "W3 29 W4 W5 W6 Road, W7, W8",
-      "cand_name": "W9",
-      "cand_addr": "W3 2-9 W4 W5 W10 Road, W11, W7, W12"
+      "s1_addr": "W3-15, W4 W5, W6, W7 32. W6, W7 32., W6, W7 32., W8 W9",
+      "cand_name": "W10.W11",
+      "cand_addr": "W3-45, W6, W12"
      },
      {
       "s1": "S1-118198262",
@@ -356,93 +356,93 @@
       "cand_addr": ""
      },
      {
-      "s1": "S1-711985992",
-      "cand": "S2-706740051",
+      "s1": "S1-686360248",
+      "cand": "S2-496914648",
       "p": 0.0,
       "pattern": "no shared name token",
-      "s1_name": "W1 W2 W3 Private Limited",
-      "s1_addr": "W4-19-22, W5 Floor, Highway W6 W7 W8 Road, W9, W7, W2",
-      "cand_name": "W10",
-      "cand_addr": "W2, W4-19-2, W9, W7"
+      "s1_name": "W1 W2 (W3) Corporation",
+      "s1_addr": "W4, West W5, 575, W6, W7 House 33/1, W8 W9 Road",
+      "cand_name": "W10/W9 W11",
+      "cand_addr": "W6, W12, 575, W4"
      },
      {
-      "s1": "S1-393620770",
-      "cand": "S3-415516197",
+      "s1": "S1-565481167",
+      "cand": "S3-36448695",
       "p": 0.0,
-      "pattern": "missing address on one side",
-      "s1_name": "W1 W2",
-      "s1_addr": "W3. No. 165 W4 Floor W5 Nagar W6 Nagar, W7, W8",
-      "cand_name": "Dr W1 [W9]",
-      "cand_addr": ""
-     },
-     {
-      "s1": "S1-254424163",
-      "cand": "S2-535839838",
-      "p": 0.0,
-      "pattern": "missing address on one side",
+      "pattern": "name differs by a legal form or one token",
       "s1_name": "W1 W2 Pvt Ltd",
-      "s1_addr": "Flat No. 123 W3, W4 W5, Opp. W6, New W7, South West W7, W7",
-      "cand_name": "W1 W1 Pvt Ltd W8",
-      "cand_addr": ""
+      "s1_addr": "W3, 26, W4 Floor, W5 Building 217, W6 Street, W7, W7 W8",
+      "cand_name": "W1 Pvt Ltd [W9]",
+      "cand_addr": "2-6, W10, W11"
+     },
+     {
+      "s1": "S1-967127284",
+      "cand": "S2-725622725",
+      "p": 0.0,
+      "pattern": "house numbers differ by 1-2 (same street, next door)",
+      "s1_name": "W1 W2 Private Limited",
+      "s1_addr": "4906, Behind W3 W4, W5, W6, W7",
+      "cand_name": "W8 W9 W10 W11",
+      "cand_addr": "4908, W5, W7"
      }
     ]
    }
   },
   "US": {
    "false_positives": {
-    "n": 4633,
+    "n": 4696,
     "patterns": [
      {
       "pattern": "name differs by a legal form or one token",
-      "n": 1512,
-      "share": 0.3264
+      "n": 1596,
+      "share": 0.3399
      },
      {
       "pattern": "name partly overlapping",
-      "n": 778,
-      "share": 0.1679
+      "n": 700,
+      "share": 0.1491
      },
      {
       "pattern": "missing address on one side",
-      "n": 648,
-      "share": 0.1399
+      "n": 677,
+      "share": 0.1442
      },
      {
       "pattern": "house number truncated (1447 -> 447)",
-      "n": 503,
-      "share": 0.1086
+      "n": 432,
+      "share": 0.092
      },
      {
       "pattern": "no shared name token",
-      "n": 354,
-      "share": 0.0764
+      "n": 431,
+      "share": 0.0918
      },
      {
       "pattern": "house numbers unrelated",
-      "n": 318,
-      "share": 0.0686
+      "n": 301,
+      "share": 0.0641
      },
      {
       "pattern": "house numbers differ by 1-2 (same street, next door)",
-      "n": 147,
-      "share": 0.0317
+      "n": 159,
+      "share": 0.0339
      },
      {
-      "pattern": "no house number on one side",
-      "n": 112,
-      "share": 0.0242
+      "pattern": "house numbers differ by 3-20 (same street, a few doors away)",
+      "n": 146,
+      "share": 0.0311
      }
     ],
     "examples": [
      {
-      "s1": "S1-291062612",
-      "cand": "S3-839053375",
+      "s1": "S1-252735592",
+      "cand": "S2-992076392",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "W1 W2 W3 of W4 W5 W3",
-      "s1_addr": "151 W6 Lane, W4 W5, W7",
-      "cand_name": "W1 W2 W3 of W4 W5 W3 Corp",
-      "cand_addr": "151 W6 Lane, W4 W5, W8"
+      "s1_name": "W1 W2 W3",
+      "s1_addr": "W4, 33 W5 Street, W1",
+      "cand_name": "W1 W2 W3 Inc",
+      "cand_addr": "33 W5 ST, W1, W4"
      },
      {
       "s1": "S1-197010175",
@@ -455,14 +455,24 @@
       "cand_addr": "16900 W3 RD, W4, W5"
      },
      {
-      "s1": "S1-252735592",
-      "cand": "S2-992076392",
+      "s1": "S1-186976275",
+      "cand": "S2-593118870",
       "p": 1.0,
       "pattern": "name differs by a legal form or one token",
-      "s1_name": "W1 W2 W3",
-      "s1_addr": "W4, 33 W5 Street, W1",
-      "cand_name": "W1 W2 W3 Inc",
-      "cand_addr": "33 W5 ST, W1, W4"
+      "s1_name": "W1 W2",
+      "s1_addr": "2116 W3 W4 Highway, W5, W6",
+      "cand_name": "W1 W2  (W7)",
+      "cand_addr": "2116 W3 W4 HWY, W5, W6"
+     },
+     {
+      "s1": "S1-291062612",
+      "cand": "S3-839053375",
+      "p": 1.0,
+      "pattern": "name differs by a legal form or one token",
+      "s1_name": "W1 W2 W3 of W4 W5 W3",
+      "s1_addr": "151 W6 Lane, W4 W5, W7",
+      "cand_name": "W1 W2 W3 of W4 W5 W3 Corp",
+      "cand_addr": "151 W6 Lane, W4 W5, W8"
      },
      {
       "s1": "S1-39256764",
@@ -473,61 +483,51 @@
       "s1_addr": "3699 W5 Avenue, W6 W6 120, W7, W8",
       "cand_name": "W1 W2 W3 W4 W4",
       "cand_addr": "3699 W5 Avenue, # W6 120, W7, W9"
-     },
-     {
-      "s1": "S1-779212870",
-      "cand": "S3-217534767",
-      "p": 1.0,
-      "pattern": "name differs by a legal form or one token",
-      "s1_name": "W1 W2 W3 Company",
-      "s1_addr": "570 W4 Place W5, W6, W7",
-      "cand_name": "W1 W2 W3 Co.",
-      "cand_addr": "570 W4 Place W8, W6, W9"
      }
     ]
    },
    "false_negatives": {
-    "n": 21738,
+    "n": 19654,
     "patterns": [
      {
       "pattern": "missing address on one side",
-      "n": 5789,
-      "share": 0.2663
-     },
-     {
-      "pattern": "no shared name token",
-      "n": 3841,
-      "share": 0.1767
+      "n": 5595,
+      "share": 0.2847
      },
      {
       "pattern": "name differs by a legal form or one token",
-      "n": 3601,
-      "share": 0.1657
+      "n": 3435,
+      "share": 0.1748
+     },
+     {
+      "pattern": "no shared name token",
+      "n": 2912,
+      "share": 0.1482
      },
      {
       "pattern": "house numbers unrelated",
-      "n": 2241,
+      "n": 2027,
       "share": 0.1031
      },
      {
       "pattern": "no house number on one side",
-      "n": 1356,
-      "share": 0.0624
+      "n": 1217,
+      "share": 0.0619
      },
      {
       "pattern": "house numbers differ by 1-2 (same street, next door)",
-      "n": 1304,
-      "share": 0.06
-     },
-     {
-      "pattern": "house numbers differ by 3-20 (same street, a few doors away)",
-      "n": 1175,
-      "share": 0.0541
+      "n": 1194,
+      "share": 0.0608
      },
      {
       "pattern": "name partly overlapping",
-      "n": 985,
-      "share": 0.0453
+      "n": 1132,
+      "share": 0.0576
+     },
+     {
+      "pattern": "house numbers differ by 3-20 (same street, a few doors away)",
+      "n": 1030,
+      "share": 0.0524
      }
     ],
     "examples": [
@@ -542,44 +542,44 @@
       "cand_addr": ""
      },
      {
-      "s1": "S1-476174685",
-      "cand": "S2-422130055",
-      "p": 0.0,
-      "pattern": "no house number on one side",
-      "s1_name": "W1 & W2 Corp",
-      "s1_addr": "1517 W3 Avenue, W4 W5, W6, W7",
-      "cand_name": "W8",
-      "cand_addr": "W6, W7, W3 AVENUE"
-     },
-     {
-      "s1": "S1-630430527",
-      "cand": "S2-919947855",
+      "s1": "S1-914742846",
+      "cand": "S3-963434971",
       "p": 0.0,
       "pattern": "no shared name token",
-      "s1_name": "W1 & W2 Inc.",
-      "s1_addr": "1452 W3 Road, W4 1339, W5, W6",
-      "cand_name": "W7",
-      "cand_addr": "1452. W3 RD, W5, W6"
+      "s1_name": "W1, W2 & W3 W4 Inc",
+      "s1_addr": "W5, W6, 567 W6 W7 Road",
+      "cand_name": "W8.W9",
+      "cand_addr": "567 W6 W7 Rd, W6, W10"
      },
      {
-      "s1": "S1-604417590",
-      "cand": "S2-621008713",
+      "s1": "S1-655010230",
+      "cand": "S2-229684337",
       "p": 0.0,
-      "pattern": "missing address on one side",
+      "pattern": "no house number on one side",
       "s1_name": "W1 W2",
-      "s1_addr": "1904 W3 W4, W5, W6",
-      "cand_name": "W1 W7",
-      "cand_addr": ""
+      "s1_addr": "245 W3 Street, W4 W5 2, W6, W7",
+      "cand_name": "W8",
+      "cand_addr": "W9, W3 ST, W7, W10 W11"
      },
      {
-      "s1": "S1-144285388",
-      "cand": "S2-836191561",
+      "s1": "S1-500137885",
+      "cand": "S2-281752112",
       "p": 0.0,
-      "pattern": "missing address on one side",
-      "s1_name": "W1 W2",
-      "s1_addr": "2326 W3 W4 Drive, W5, W6",
-      "cand_name": "W1-W7",
-      "cand_addr": ""
+      "pattern": "no shared name token",
+      "s1_name": "W1 W2 & W3 W4 W5 LLC",
+      "s1_addr": "5250 89, W6 W6 157, W7, W8",
+      "cand_name": "W9.W10",
+      "cand_addr": "5250 89, W11, W7, W8"
+     },
+     {
+      "s1": "S1-898452809",
+      "cand": "S3-384971517",
+      "p": 0.0,
+      "pattern": "house numbers differ by 1-2 (same street, next door)",
+      "s1_name": "W1",
+      "s1_addr": "35505 W2 Rd, W3, W4",
+      "cand_name": "W5 (W6: 54448)",
+      "cand_addr": "35506 W2 Rd, W7/W8, W3, W9"
      }
     ]
    }
@@ -590,352 +590,352 @@
    {
     "cluster size": "singleton",
     "n": 6718,
-    "macro_f05": 0.8961,
+    "macro_f05": 0.9149,
     "micro_precision": 0.0,
     "micro_recall": 0.0
    },
    {
     "cluster size": "1 match",
     "n": 6449,
-    "macro_f05": 0.7973,
-    "micro_precision": 0.8999,
-    "micro_recall": 0.8319
+    "macro_f05": 0.8379,
+    "micro_precision": 0.925,
+    "micro_recall": 0.8643
    },
    {
     "cluster size": "2-3",
     "n": 49191,
-    "macro_f05": 0.9106,
-    "micro_precision": 0.9651,
-    "micro_recall": 0.845
+    "macro_f05": 0.9275,
+    "micro_precision": 0.976,
+    "micro_recall": 0.8663
    },
    {
     "cluster size": "4-5",
     "n": 43909,
-    "macro_f05": 0.9329,
-    "micro_precision": 0.9817,
-    "micro_recall": 0.8379
+    "macro_f05": 0.9458,
+    "micro_precision": 0.988,
+    "micro_recall": 0.8597
    },
    {
     "cluster size": "6+",
     "n": 13733,
-    "macro_f05": 0.9387,
-    "micro_precision": 0.9891,
-    "micro_recall": 0.8267
+    "macro_f05": 0.9503,
+    "micro_precision": 0.9933,
+    "micro_recall": 0.8499
    }
   ],
   "US": [
    {
     "cluster size": "singleton",
     "n": 6533,
-    "macro_f05": 0.938,
+    "macro_f05": 0.9271,
     "micro_precision": 0.0,
     "micro_recall": 0.0
    },
    {
     "cluster size": "1 match",
     "n": 6545,
-    "macro_f05": 0.8722,
-    "micro_precision": 0.9403,
-    "micro_recall": 0.8947
+    "macro_f05": 0.886,
+    "micro_precision": 0.9386,
+    "micro_recall": 0.9102
    },
    {
     "cluster size": "2-3",
     "n": 49330,
-    "macro_f05": 0.9582,
-    "micro_precision": 0.9831,
-    "micro_recall": 0.9161
+    "macro_f05": 0.9622,
+    "micro_precision": 0.9832,
+    "micro_recall": 0.925
    },
    {
     "cluster size": "4-5",
     "n": 43896,
-    "macro_f05": 0.9677,
-    "micro_precision": 0.9922,
-    "micro_recall": 0.9086
+    "macro_f05": 0.9707,
+    "micro_precision": 0.9925,
+    "micro_recall": 0.9162
    },
    {
     "cluster size": "6+",
     "n": 13696,
-    "macro_f05": 0.9691,
-    "micro_precision": 0.9948,
-    "micro_recall": 0.9002
+    "macro_f05": 0.9721,
+    "micro_precision": 0.9953,
+    "micro_recall": 0.9086
    }
   ]
  },
- "stack_dir": "work/models/b3_k30_u80_df1_qb60k_key20_pr60__m1120k_pre50k_m250k_cal30k",
+ "stack_dir": "work/models/b3_k30_u80_df1_qb60k_key20_pr120-15-0.001_f3__m1120k_pre50k_m250k_cal30k",
  "stack": {
   "countries": [
    "India",
    "US"
   ],
   "m1": {
-   "rows": 7845394,
-   "pos_rate": 0.0985069710966715,
-   "best_iteration": 1544,
+   "rows": 10754565,
+   "pos_rate": 0.07225833866827715,
+   "best_iteration": 1317,
    "top_features": [
     [
      "r_pre",
-     38.6
-    ],
-    [
-     "r_rrf",
-     19.59
+     60.49
     ],
     [
      "num_unmatched_1",
-     4.81
+     4.54
     ],
     [
      "addr_contain",
-     4.68
+     3.63
     ],
     [
      "x_rrf_rank",
-     4.64
+     3.04
     ],
     [
      "num_rel",
-     3.41
+     3.01
     ],
     [
      "num_unmatched_2",
-     3.41
+     2.98
     ],
     [
-     "name_lev",
-     3.03
-    ],
-    [
-     "name_skel_jac",
+     "name_skel_lev",
      2.24
     ],
     [
-     "name_jw",
+     "r_rrf",
+     2.12
+    ],
+    [
+     "name_tok_only_2",
      2.0
     ],
     [
+     "name_lev",
+     1.77
+    ],
+    [
+     "name_skel_jac",
+     1.45
+    ],
+    [
+     "name_jw",
+     1.44
+    ],
+    [
      "name_tset",
-     1.38
+     1.32
     ],
     [
      "addr_unmatched_2",
-     1.3
+     1.26
     ],
     [
-     "alias_best",
-     1.23
-    ],
-    [
-     "name_me_21",
-     1.2
-    ],
-    [
-     "name_freq_max",
-     1.16
+     "addr_skel_jac",
+     0.94
     ]
    ]
   },
   "m2": {
-   "rows": 3270262,
-   "pos_rate": 0.09863154695250717,
-   "best_iteration": 590,
+   "rows": 4460688,
+   "pos_rate": 0.07252222078746597,
+   "best_iteration": 413,
    "top_features": [
     [
      "m_excl_prob",
-     71.26
+     73.41
     ],
     [
      "m_prob",
-     22.98
+     19.83
     ],
     [
-     "m_rank",
-     2.52
-    ],
-    [
-     "m_gap_to_best",
-     0.54
+     "m_gap_rel",
+     4.1
     ],
     [
      "m_score_share",
-     0.36
+     0.7
+    ],
+    [
+     "m_cliff",
+     0.2
+    ],
+    [
+     "m_std",
+     0.18
+    ],
+    [
+     "m_psum",
+     0.16
     ],
     [
      "m_best_other_source",
-     0.31
-    ],
-    [
-     "name_freq_max",
-     0.25
-    ],
-    [
-     "name_len_ratio",
-     0.24
-    ],
-    [
-     "m_n_strong",
-     0.24
+     0.14
     ],
     [
      "x_rrf_rank",
-     0.21
+     0.11
+    ],
+    [
+     "name_freq_max",
+     0.11
+    ],
+    [
+     "name_len_ratio",
+     0.11
+    ],
+    [
+     "m_gap_to_best",
+     0.1
     ],
     [
      "addr_len_ratio",
-     0.19
+     0.09
     ],
     [
      "x_n_cands",
-     0.12
-    ],
-    [
-     "num_unmatched_2",
      0.09
     ],
     [
-     "m_n_competitors",
-     0.09
-    ],
-    [
-     "num_unmatched_1",
-     0.08
+     "m_excl_loss",
+     0.07
     ]
    ]
   },
   "calibration": {
-   "rows": 1960885,
-   "ece_raw": 0.00034953311021121186,
-   "ece_calibrated": 7.620562552083521e-19,
+   "rows": 2696299,
+   "ece_raw": 0.00014522781504191373,
+   "ece_calibrated": 3.446003760372249e-19,
    "reliability_raw": [
     {
      "bin": "[0.00,0.10)",
-     "n": 1744905,
-     "mean_p": 0.0012,
-     "frac_pos": 0.0013
+     "n": 2482399,
+     "mean_p": 0.0007,
+     "frac_pos": 0.0007
     },
     {
      "bin": "[0.10,0.20)",
-     "n": 10410,
-     "mean_p": 0.1437,
-     "frac_pos": 0.145
+     "n": 8363,
+     "mean_p": 0.1434,
+     "frac_pos": 0.1412
     },
     {
      "bin": "[0.20,0.30)",
-     "n": 5817,
-     "mean_p": 0.246,
-     "frac_pos": 0.2512
+     "n": 4777,
+     "mean_p": 0.2466,
+     "frac_pos": 0.2464
     },
     {
      "bin": "[0.30,0.40)",
-     "n": 4375,
-     "mean_p": 0.3478,
-     "frac_pos": 0.3472
+     "n": 3362,
+     "mean_p": 0.3482,
+     "frac_pos": 0.3569
     },
     {
      "bin": "[0.40,0.50)",
-     "n": 3522,
+     "n": 2894,
      "mean_p": 0.4489,
-     "frac_pos": 0.4463
+     "frac_pos": 0.434
     },
     {
      "bin": "[0.50,0.60)",
-     "n": 3285,
-     "mean_p": 0.5495,
-     "frac_pos": 0.5534
+     "n": 2715,
+     "mean_p": 0.5497,
+     "frac_pos": 0.5407
     },
     {
      "bin": "[0.60,0.70)",
-     "n": 3466,
-     "mean_p": 0.6508,
-     "frac_pos": 0.6151
+     "n": 2852,
+     "mean_p": 0.6513,
+     "frac_pos": 0.6322
     },
     {
      "bin": "[0.70,0.80)",
-     "n": 4218,
-     "mean_p": 0.7519,
-     "frac_pos": 0.7487
+     "n": 3684,
+     "mean_p": 0.7522,
+     "frac_pos": 0.741
     },
     {
      "bin": "[0.80,0.90)",
-     "n": 6818,
-     "mean_p": 0.8555,
-     "frac_pos": 0.8485
+     "n": 6029,
+     "mean_p": 0.8563,
+     "frac_pos": 0.853
     },
     {
      "bin": "[0.90,1.00)",
-     "n": 174069,
-     "mean_p": 0.9928,
-     "frac_pos": 0.9921
+     "n": 179224,
+     "mean_p": 0.9941,
+     "frac_pos": 0.994
     }
    ]
   },
-  "seconds": 423.0
+  "seconds": 457.9
  },
  "headline": {
   "per_country": {
-   "India": 0.9150869450113063,
-   "US": 0.9571235012529297
+   "India": 0.9312828816068648,
+   "US": 0.960382973008905
   },
-  "loco_mean": 0.89043,
+  "loco_mean": 0.88945,
   "test_mix": {
    "India": 0.4675125133907133,
    "US": 0.3827354456798788,
    "LOCO": 0.14975204092940786
   },
-  "reweighted": 0.927483397260764
+  "reweighted": 0.9361559586603635
  },
  "loco": {
   "India->US": {
-   "macro_f05": 0.93534,
-   "rule": "('eum', 0.6, 0.0)",
+   "macro_f05": 0.9365,
+   "rule": "('eum', 1.0, 0.05)",
    "n": 120000
   },
   "US->India": {
-   "macro_f05": 0.84551,
-   "rule": "('eum', 1.6, 0.0)",
+   "macro_f05": 0.84239,
+   "rule": "('eum', 1.6, 0.4)",
    "n": 120000
   },
   "mean": {
-   "macro_f05": 0.89043
+   "macro_f05": 0.88945
   }
  },
  "output": {
   "countries": {
    "France": {
-    "pairs_scored": 12764019,
-    "ids_predicted": 822625,
+    "pairs_scored": 19940991,
+    "ids_predicted": 839054,
     "s1": 259452
    },
    "India": {
-    "pairs_scored": 27528332,
-    "ids_predicted": 2414102,
+    "pairs_scored": 39186058,
+    "ids_predicted": 2441737,
     "s1": 809986
    },
    "US": {
-    "pairs_scored": 20783504,
-    "ids_predicted": 2122575,
+    "pairs_scored": 25644423,
+    "ids_predicted": 2144067,
     "s1": 663106
    }
   },
-  "rule": "('eum', 0.6, 0.0)",
+  "rule": "('eum', 0.8, 0.4)",
   "candidate_pairs.tsv": {
    "rows": 1732544,
    "non_empty": 1732544,
-   "ids": 61075855
+   "ids": 84771472
   },
   "matching_results.tsv": {
    "rows": 1732544,
-   "non_empty": 1620563,
-   "ids": 5359302
+   "non_empty": 1624146,
+   "ids": 5424858
   }
  },
  "ablation": [
   {
    "phase": "0 \u2014 sparse blocking + LightGBM stack",
    "measured on": "full partitions, held-out fold 0",
-   "India": 0.9151,
-   "US": 0.9571,
-   "LOCO": 0.89043,
-   "reweighted": 0.9275,
+   "India": 0.9313,
+   "US": 0.9604,
+   "LOCO": 0.88945,
+   "reweighted": 0.9362,
    "kept": "yes \u2014 the submitted pipeline"
   },
   {
@@ -954,27 +954,27 @@
    "country": "France",
    "S1 entities": 259452,
    "pool (S2+S3)": 1434993,
-   "candidate pairs": 12764019,
-   "avg_candidates": 49.2,
-   "reduction_ratio": 0.9999657168564937,
+   "candidate pairs": 19940991,
+   "avg_candidates": 76.86,
+   "reduction_ratio": 0.999946440078465,
    "labels": "none (test-only country)"
   },
   {
    "country": "India",
    "S1 entities": 809986,
    "pool (S2+S3)": 4717565,
-   "candidate pairs": 27528332,
-   "avg_candidates": 33.99,
-   "reduction_ratio": 0.999992795821048,
+   "candidate pairs": 39186058,
+   "avg_candidates": 48.38,
+   "reduction_ratio": 0.9999897449880272,
    "labels": "yes"
   },
   {
    "country": "US",
    "S1 entities": 663106,
    "pool (S2+S3)": 3817031,
-   "candidate pairs": 20783504,
-   "avg_candidates": 31.34,
-   "reduction_ratio": 0.9999917887339318,
+   "candidate pairs": 25644423,
+   "avg_candidates": 38.67,
+   "reduction_ratio": 0.999989868254149,
    "labels": "yes"
   }
  ],
@@ -987,13 +987,13 @@
    "  test dir: student_resource/dataset/test",
    "  required S1 entities: 1732544",
    "  valid S2/S3 match IDs: 9969589",
-   "  matching_results.tsv: 1732544 rows (111981 empty, 1620563 non-empty).",
+   "  matching_results.tsv: 1732544 rows (108398 empty, 1624146 non-empty).",
    "  candidate_pairs.tsv: 1732544 rows (0 empty, 1732544 non-empty).",
    "",
    "PASS \u2014 no blocking issues found. Safe to submit."
   ],
   "stderr": ""
  },
- "runtime": 15351.1,
- "seconds": 645.0
+ "runtime": 11980.4,
+ "seconds": 1357.7
 }

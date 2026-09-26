@@ -223,15 +223,40 @@ reproduced both exactly, which is the point of having measured it first.
 
 ### Matching (held-out fold 0, 120,000 entities per country)
 
+Two numbers are reported per run and they are not the same thing. The
+**per-country** row tunes the decision rule separately for India and the US,
+which is what `validate` prints. The **single-rule** row applies one rule to every
+country, which is what the *submission* actually does — `write_outputs` takes the
+one rule with the best test-mix-weighted score and applies it to France too,
+because France has no labels to tune on. The single-rule row is the honest
+headline.
+
 | run | India | US | LOCO India→US | LOCO US→India | LOCO mean | reweighted |
 | --- | --- | --- | --- | --- | --- | --- |
 | v1 | 0.9151 | 0.9571 | — | — | 0.8904 | 0.9275 |
-| v2 (baseline) | 0.9246 | 0.9591 | 0.9354 | 0.8366 | 0.8860 | 0.9320 |
-| **v3** | **0.9321** | **0.9610** | **0.9365** | **0.8424** | **0.8895** | **0.9368** |
-| Δ vs v2 | **+0.0075** | +0.0019 | +0.0011 | **+0.0058** | +0.0034 | **+0.0048** |
+| v2, per-country rules | 0.9246 | 0.9591 | 0.9354 | 0.8366 | 0.8860 | 0.9320 |
+| v3, per-country rules | 0.9321 | 0.9610 | 0.9365 | 0.8424 | 0.8895 | 0.9368 |
+| v2, **single rule** `('eum',0.6,0.0)` | 0.9246 | 0.9591 | — | — | 0.8860 | **0.9320** |
+| **v3, single rule** `('eum',0.8,0.4)` | **0.9313** | **0.9604** | 0.9365 | 0.8424 | **0.8895** | **0.9362** |
+| **Δ vs v2, like for like** | **+0.0067** | **+0.0013** | +0.0011 | **+0.0058** | +0.0034 | **+0.0042** |
 
-Precision and recall both rose in both countries — India 0.983/0.842 → 0.985/0.857,
-US 0.988/0.912 → 0.990/0.914 — so this is not a precision-for-recall trade.
+The US gives up 0.0006 under the shared rule because its own optimum is
+`miss_prob = 0.2` rather than 0.4; India's optimum *is* the shared rule. (v2's
+single-rule figures come from the probe in §1.1, which swept that exact stack and
+feature set, so they are directly comparable.)
+
+Precision and recall both rose in both countries — India 0.983/0.842 →
+0.9825/0.8597, US 0.988/0.912 → 0.9878/0.9172 — so this is not a
+precision-for-recall trade. Singleton accuracy rose too (India 0.923 → 0.915 is
+the one number that fell; the longer candidate list gives a singleton more
+opportunities to be wrongly matched, and the rule accepts that trade because the
+metric pays more for the recall it buys elsewhere).
+
+**Error counts.** Against the **v1** report — the only one with an error analysis
+committed, since v2's was never generated — India's false positives fall 9,139 →
+**6,366** and its false negatives 26,825 → **20,531**, both while the candidate
+list grew. US false negatives fall 21,738 → 19,654 with false positives
+essentially flat (4,633 → 4,696).
 
 **Where the gain comes from.** India's ceiling moved +0.0031 and India's score moved
 +0.0075, so the matcher's *capture rate* against its own ceiling improved from
