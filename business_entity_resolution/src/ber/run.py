@@ -25,7 +25,7 @@ import pandas as pd
 from . import config
 from .corpus import build_roles, roles_path
 from .data import countries as data_countries, load_partition
-from .featurize import featurize_partition
+from .featurize import DEFAULT_BLOCK_S1, featurize_partition
 from .io_utils import read_s1_ids, write_candidates, write_matching
 from .labels import GroundTruth
 from .preranker import model_path as preranker_path
@@ -157,7 +157,8 @@ def stage_prune(split: str, bcfg: BlockingConfig, countries: Sequence[str],
 
 
 def stage_featurize(split: str, bcfg: BlockingConfig, countries: Sequence[str],
-                    n_workers: int | None = None, block_s1: int = 4000,
+                    n_workers: int | None = None,
+                    block_s1: int = DEFAULT_BLOCK_S1,
                     force: bool = False) -> None:
     rp = roles_path(split)
     for c in countries:

@@ -254,8 +254,24 @@ def _load_candidate_columns(parts: Sequence[Path]) -> Dict[str, np.ndarray]:
     return out
 
 
+#: S1 entities per block.
+#:
+#: This is a **memory** knob, and the dominant one in this stage.  ``compute_block``
+#: builds a ``RecordView`` for every candidate in its block before computing any
+#: row, and a view holds four character-n-gram sets, so a worker's working set is
+#: roughly ``block_s1 x candidates-per-S1 x 25 KB``.  At 4,000 that is 4-5 GB per
+#: worker; eight of those on a 16 GiB machine put 10.9 GB into swap and 8.0 GB
+#: into the compressor, and the workers spent their time page-faulting — visible
+#: as low CPU *and* low RSS at the same time, which is the signature of a process
+#: whose pages have been evicted rather than one that is idle.
+#:
+#: A single block measured in a single process fits comfortably and runs at
+#: 160 µs/pair, which is exactly why benchmarking one block in isolation hid this.
+DEFAULT_BLOCK_S1 = 1000
+
+
 def iter_blocks(split: str, country: str, bcfg: BlockingConfig,
-                block_s1: int = 4000, pruned: bool = True
+                block_s1: int = DEFAULT_BLOCK_S1, pruned: bool = True
                 ) -> Iterable[Tuple[Block, pd.DataFrame]]:
     """Yield ``(block, rows)`` — the feature job and the candidate rows behind it."""
     d = cand_dir(split, country, bcfg, pruned=pruned)
@@ -319,7 +335,7 @@ def iter_blocks(split: str, country: str, bcfg: BlockingConfig,
 
 
 def featurize_partition(split: str, country: str, bcfg: BlockingConfig,
-                        roles_path: Path, block_s1: int = 4000,
+                        roles_path: Path, block_s1: int = DEFAULT_BLOCK_S1,
                         n_workers: int | None = None, verbose: bool = True,
                         force: bool = False, pruned: bool = True) -> Path:
     """Compute every pair feature for one partition, one shard per block.
