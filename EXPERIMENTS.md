@@ -213,18 +213,84 @@ Baseline is the v2 row from §0. Config
 
 ### Candidate ceiling (held-out fold 0, full-pool retrieval)
 
-| run | India cand/S1 | India ceiling | US cand/S1 | US ceiling |
-| --- | --- | --- | --- | --- |
-| v2 baseline | 33.8 | 0.9601 | 31.6 | 0.9866 |
-| v3 (`eps=0.001`) | _pending_ | _pending_ | _pending_ | _pending_ |
+| run | India cand/S1 | India PR | India FCR | India ceiling | US cand/S1 | US ceiling |
+| --- | --- | --- | --- | --- | --- | --- |
+| v2 baseline | 33.8 | 0.9021 | 0.7537 | 0.9601 | 31.6 | 0.9866 |
+| **v3 (`eps=0.001`)** | 47.6 | **0.9091** | **0.7690** | **0.9632** | 42.0 | **0.9878** |
 
-### Matching (held-out fold 0)
+The pruning probe predicted 0.9632 and 0.9878 from the cached raw union; the run
+reproduced both exactly, which is the point of having measured it first.
 
-| run | India | US | LOCO mean | reweighted |
-| --- | --- | --- | --- | --- |
-| v1 | 0.9151 | 0.9571 | 0.8904 | 0.9275 |
-| v2 (baseline) | 0.9246 | 0.9591 | 0.8860 | 0.9320 |
-| v3 | _pending_ | _pending_ | _pending_ | _pending_ |
+### Matching (held-out fold 0, 120,000 entities per country)
+
+| run | India | US | LOCO India→US | LOCO US→India | LOCO mean | reweighted |
+| --- | --- | --- | --- | --- | --- | --- |
+| v1 | 0.9151 | 0.9571 | — | — | 0.8904 | 0.9275 |
+| v2 (baseline) | 0.9246 | 0.9591 | 0.9354 | 0.8366 | 0.8860 | 0.9320 |
+| **v3** | **0.9321** | **0.9610** | **0.9365** | **0.8424** | **0.8895** | **0.9368** |
+| Δ vs v2 | **+0.0075** | +0.0019 | +0.0011 | **+0.0058** | +0.0034 | **+0.0048** |
+
+Precision and recall both rose in both countries — India 0.983/0.842 → 0.985/0.857,
+US 0.988/0.912 → 0.990/0.914 — so this is not a precision-for-recall trade.
+
+**Where the gain comes from.** India's ceiling moved +0.0031 and India's score moved
++0.0075, so the matcher's *capture rate* against its own ceiling improved from
+96.30% to 96.77%. Roughly 0.003 of the gain is the longer candidate list and
+roughly 0.004 is the new features converting headroom that was already there.
+
+**The France proxy improved second-most** (+0.0058 on US→India). That is the
+result the two rarity columns were designed for: both are divided by the
+country's own maximum IDF so "a rare word agreed" means the same thing in a
+country whose corpus is a different size, and leave-one-country-out is the only
+honest test of it.
+
+**The widened decision grid is now used.** Both countries selected a non-zero
+`miss_prob` (0.4 India, 0.2 US) where the v2 candidate set had no use for one
+(§1.1 measured +0.00002). The knob only pays off in combination with a longer
+candidate list — on its own it is worthless, which is why it is listed under both
+"rejected" and "kept".
+
+### Which of the new columns earned their place
+
+Share of total LightGBM gain, and rank among all of that model's features.
+
+| column | M1 gain | M1 rank | verdict |
+| --- | --- | --- | --- |
+| `name_skel_lev` | 2.24% | **7 / 62** | clear winner |
+| `addr_skel_jac` | 0.94% | 15 / 62 | earns its place |
+| `name_idf_jac` | 0.92% | 16 / 62 | earns its place |
+| `addr_rare_shared` | 0.15% | 30 / 62 | marginal |
+| `name_rare_shared` | 0.08% | 38 / 62 | marginal |
+| `adm_pin_match` | 0.01% | 49 / 62 | ~nothing |
+| `adm_tail_cov` | **0.00%** | 51 / 62 | **dead** |
+| `xf_n1_a2` | **0.00%** | 53 / 62 | **dead** |
+| `adm_tail_jac` | **0.00%** | 55 / 62 | **dead** |
+| `xf_n2_a1` | **0.00%** | 60 / 62 | **dead** |
+
+The ten together are 4.34% of M1's gain. All six meta columns contribute:
+`m_gap_rel` 4.10% (**rank 3 / 77**), `m_cliff` 0.20%, `m_std` 0.18%, `m_psum`
+0.16%, `m_excl_loss` 0.07%, `m_rank_src` 0.06% — 4.85% of M2's gain together.
+
+**Two of the proposed ideas are therefore measured dead.**
+
+* **Cross-field name↔address leakage** — 0.00% in both directions. The mechanism
+  is real; a true training pair exists whose only shared evidence is an S1 *name*
+  token appearing in the candidate's *address*. It is simply too rare to
+  accumulate gain across 10.75M rows.
+* **Administrative / geographic proxies** — 0.00% for the address tail in both the
+  strict and the reorder-robust form, and 0.01% for the PIN/ZIP agreement.
+
+One caveat stated honestly: gain-based importance understates a column that is
+*redundant* with a stronger one, and `addr_contain` — IDF-weighted address
+containment, rank 3 in M1 at 3.63% — already sees much of what the tail columns
+see. "Redundant" is better supported by this evidence than "useless". Either way
+they do not pay for the per-pair set intersections they cost, and set intersection
+is 38% of worker time at this scale, so **the next run should drop all four**.
+
+What did pay off is the *phonetic* proposal, implemented as edit distance on the
+romanised consonant skeleton rather than by adding a Double Metaphone dependency:
+gram Jaccard is order-free and cannot separate a transposition from a near-match,
+and `name_skel_lev` is M1's 7th most important feature out of 62.
 
 ---
 
