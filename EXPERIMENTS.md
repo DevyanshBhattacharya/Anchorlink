@@ -334,26 +334,63 @@ and `name_skel_lev` is M1's 7th most important feature out of 62.
 
 ---
 
-## 5. Not yet measured — implemented and waiting on a benchmark
+## 5. The retrieval benchmark — one idea rejected, one free win found
 
-Two retrieval changes are written and tested but **not** in the run above,
-because both alter the raw union and so cost a full re-block (~2.5 h for the
-eight partitions) before anything downstream can start. Neither is worth that
-until it earns it on the standard benchmark — 4,000 held-out fold-0 India queries
-against the whole 4,133,346-record S2+S3 pool, the same one every row of
-`RESULTS.md` uses.
+Both changes altered the raw union, so both cost a ~2.5 h re-block before anything
+downstream could start, and neither was going to get one on a hunch. They were
+measured first on the standard benchmark of this project — **4,000 held-out fold-0
+India queries against the whole 4,133,346-record S2+S3 pool**, union capped at 80
+per source, the same setup every row of `RESULTS.md` uses
+(`probes/probe_blocking.py`, `work/reports/probe_blocking.json`, 170 s).
 
-1. **Selectivity-ordered key hits + a larger block cap** (§2.4),
-   `key_select=True, key_block_cap=150`.
-2. **A fifth retriever: banded MinHash (LSH).** This is the one item on the list
-   that attacks the actual ceiling, and the argument for it is not "MinHash
-   approximates Jaccard" — the `na` view's TF-IDF cosine already does that.
-   It is that **LSH retrieval is not rank-based.** All four current views are
-   top-k, and in a pool where 35–44% of names repeat, a true match can sit at
-   rank 200 and be invisible however good the similarity is. A banded signature
-   either collides or does not, independently of how much company it has. It also
-   sidesteps the rare-term query pruning, which is measured to cost 0.017 of pair
-   recall on the `na` view alone (0.8809 → 0.8642 at budget 120k → 60k).
+| combination | cand/S1 | pair recall | full-cluster recall | ceiling |
+| --- | --- | --- | --- | --- |
+| 4 views, no keys | 159.2 | 0.9196 | 0.7955 | 0.9656 |
+| 4 views + keys (production) | 159.8 | 0.9209 | 0.7979 | 0.9674 |
+| **4 views + keys, selective, cap 150** | 159.7 | **0.9361** | **0.8279** | **0.9747** |
+| 4 views + LSH, no keys | 160.0 | 0.9145 | 0.7777 | 0.9640 |
+| 4 views + LSH + keys (production) | 160.0 | 0.9120 | 0.7756 | 0.9630 |
+| 4 views + LSH + keys, selective | 160.0 | 0.9271 | 0.8048 | 0.9703 |
+| LSH alone | 59.8 | 0.7348 | 0.4217 | 0.8770 |
+
+### MinHash / LSH — REJECTED, and it makes things worse
+
+Adding it to the production union takes the ceiling **down**, 0.9674 → 0.9630.
+
+The argument for it was that LSH is not a ranked retriever: all four cosine views
+are top-k, and in a pool where 35-44% of names repeat a true match can sit at rank
+200 and be invisible however similar it is, whereas a banded signature either
+collides or does not. That reasoning is sound in isolation and wrong here, for a
+reason the benchmark makes obvious: **the candidate budget is fixed.** The union
+keeps 80 per source, so a fifth view does not add candidates, it *displaces* them
+— and LSH alone reaches only 0.7348 pair recall against the name+address view's
+0.89, so what it displaces is better than what it brings.
+
+It is cheap and it works as designed — signatures build at 75,668 records/s (31 s
+for a 2M-record pool, 0.36 GB) and queries cost **0.04 s/1k**, sixteen times less
+than the skeleton view's 0.63, which is the O(1) hash lookup doing what it
+promises. The code and its ten tests stay in the tree behind
+`MinHashConfig`, because the conclusion is "not at a fixed budget", not "never":
+with a larger union cap, or as a *rescue* pass for queries whose cosine views all
+came back weak, the arithmetic changes. It is off.
+
+### Selectivity-ordered key hits — ADOPTED, +0.0073 of ceiling for nothing
+
+`+0.0152` pair recall, `+0.0300` full-cluster recall, `+0.0073` ceiling, at an
+**identical candidate count** (159.7 against 159.8) and identical cost — the key
+lookup is 0.05 s/1k queries either way.
+
+This is the bug in §2.4: hits came back in pool order and the caller kept the
+first twenty with `np.unique`, **which sorts**, so a query matching a 3-record key
+and a 140-record key kept twenty rows chosen by lowest pool index rather than the
+three precise ones. It also explains why raising the block cap on its own would
+have *hurt*, which is why the brief's "raise the cap to 150" needed the ordering
+fix to become true rather than false.
+
+For scale: +0.0073 of raw-union ceiling is larger than everything §3 gained put
+together. It is now the default (`key_select=True`, `key_block_cap=150`), which
+changes the retrieval fingerprint to `b3_k30_u80_df1_qb60k_key20_kb150_ks` and so
+costs a full re-block — this time on a measured number rather than a hunch.
 
 ---
 

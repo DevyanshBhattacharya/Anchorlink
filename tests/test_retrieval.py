@@ -136,9 +136,13 @@ def test_pruning_knobs_move_the_pruned_path_but_not_the_raw_one(tmp_path, monkey
     other = BlockingConfig(k_per_retriever=25)
     assert (retrieval.cand_dir("train", "X", other, pruned=False)
             != retrieval.cand_dir("train", "X", base, pruned=False))
-    # and the key-block cap is part of what the raw union means
-    assert (BlockingConfig(key_block_cap=150).retrieval_fingerprint()
-            != base.retrieval_fingerprint())
+    # the key-block cap and the key-hit ordering are both part of what the raw
+    # union *means*, so each must move the raw path (values chosen to differ from
+    # whatever the current defaults are, not to be particular numbers)
+    for kw in (dict(key_block_cap=base.key_block_cap + 25),
+               dict(key_select=not base.key_select)):
+        assert (BlockingConfig(**kw).retrieval_fingerprint()
+                != base.retrieval_fingerprint()), kw
 
 
 def test_load_candidates_filters_per_row_group(tmp_path, monkeypatch):

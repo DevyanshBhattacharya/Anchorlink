@@ -107,12 +107,25 @@ class BlockingConfig:
     #: records kept per exact key.  A key matching thousands of records carries
     #: no information, but the old cap of 50 also discarded a real entity that
     #: happened to share a building with 50 others.
-    key_block_cap: int = DEFAULT_KEY_BLOCK_CAP
-    #: keep the *selective* keys' hits when a query has more than ``k_keys`` of
-    #: them, instead of the lowest pool row ids.  Off by default because it
-    #: changes the raw union, and a cached union must never mean two things — it
-    #: gets its own fingerprint when on.
-    key_select: bool = False
+    #: Raised from 50 together with ``key_select``.  On its own a larger cap makes
+    #: recall *worse* — a bigger block crowds a precise hit out of the per-query cut
+    #: with its own low-numbered rows — so the two only make sense together.
+    key_block_cap: int = 150
+    #: Keep the hits of the *selective* keys when a query has more than ``k_keys``
+    #: of them, rather than the lowest pool row ids.
+    #:
+    #: Measured on the standard benchmark — 4,000 held-out fold-0 India queries
+    #: against the whole 4.1M-record S2+S3 pool, union capped at 80 per source, so
+    #: at an identical candidate count (work/reports/probe_blocking.json):
+    #:
+    #:   4 views + keys, pool order, cap 50   PR 0.9209  FCR 0.7979  ceiling 0.9674
+    #:   4 views + keys, selective, cap 150   PR 0.9361  FCR 0.8279  ceiling 0.9747
+    #:
+    #: +0.0073 of raw-union ceiling for nothing: the key lookup costs 0.05 s/1k
+    #: queries either way and the candidate count is unchanged.  It gets its own
+    #: fingerprint because it changes the raw union, and a cached union must never
+    #: mean two things.
+    key_select: bool = True
     tag: str = "b3"
 
     def specs(self) -> List[Tuple[str, IndexConfig]]:
