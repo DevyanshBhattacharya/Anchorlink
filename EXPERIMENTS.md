@@ -334,15 +334,23 @@ against the whole 4,133,346-record S2+S3 pool, the same one every row of
 
 ## 6. Runtime, and what the featurise stage taught
 
-| stage | v2 (submitted) | v3 (`eps=0.001`) |
-| --- | --- | --- |
-| blocking, 8 partitions | 7,778 s | **0 s — cached and reused** |
-| pre-ranker fit | ~1,200 s | **0 s — cached and reused** |
-| prune, train | 227 s | 387 s |
-| featurise, train | 1,412 s | _pending_ |
-| featurise, test | 7,604 s | _pending_ |
-| score, all partitions | 1,977 s | _pending_ |
-| **total** | 15,263 s | _pending_ |
+| stage | v2 (submitted) | v3 (`eps=0.001`) | pairs |
+| --- | --- | --- | --- |
+| blocking, 8 partitions | 7,778 s | **0 s — cached and reused** | — |
+| pre-ranker fit | ~1,200 s | **0 s — cached and reused** | — |
+| prune, train + test | 752 s | 1,079 s | 395M → 119M |
+| featurise, train | 1,412 s | **1,248 s** | 33.1M |
+| featurise, test | 7,604 s | **3,353 s** | 84.8M |
+| M1 + M2 + calibration | 1,592 s | 693 s | 15.2M rows |
+| score, all partitions | 1,977 s | 2,960 s | 119M |
+| LOCO (two full stacks) | ~1,700 s | ~1,900 s | — |
+| write both TSVs | ~600 s | ~700 s | — |
+| **total** | **15,263 s** | **11,980 s** | |
+
+**40% more candidate pairs, and 22% less wall time.** Feature throughput across
+all five partitions went from 9,430 pairs/s to **25,840** — 2.7x per pair, while
+computing 62 columns instead of 52. Both improvements come from the two driver
+changes in §6, not from doing less work.
 
 Splitting the retrieval fingerprint out (§2.3) is what makes the second column
 possible: every sweep and every run on this branch reuses 5 GB of cached raw
@@ -428,6 +436,22 @@ ones taken on an idle machine: 160 µs/pair for `compute_block`, 0.13 s/block fo
 the parent, 0.06 s/block to pickle a block. The ones taken alongside the run
 should not have been trusted, and the conclusions drawn from them cost three
 restarts.
+
+### Submission
+
+Official validator: **PASS — no blocking issues found. Safe to submit.**
+
+```
+matching_results.tsv:  1,732,544 rows (108,398 empty, 1,624,146 non-empty), 5,424,858 ids
+candidate_pairs.tsv:   1,732,544 rows (0 empty), 84,771,472 ids
+final decision rule:   ('eum', 0.8, 0.4)
+```
+
+One practical consequence of `eps = 0.001` worth knowing before uploading:
+`candidate_pairs.tsv` grows from 810 MB to **1.1 GB**, because the file is defined
+as the set the matcher actually scores and that set is now 84.8M pairs rather than
+61.1M. It is the honest file, but the competition's upload limit should be checked
+against it.
 
 ---
 
